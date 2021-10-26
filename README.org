@@ -29,7 +29,13 @@ involved with this.
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
 
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point][Fixed time-point]]
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-multiple-time-points][Multiple time-points]]
+
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-competing-risks-data][Analysis of the colon competing risks data]]
+
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point-1][Fixed time-point]]
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-multiple-time-points-1][Multiple time-points]]
 
 *Note:* To run any of the code below you need to load the following
 =R= script:
