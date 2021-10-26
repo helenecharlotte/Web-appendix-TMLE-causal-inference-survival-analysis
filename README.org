@@ -59,29 +59,27 @@ source("./usage/preprocess.colon.data.R")
 Number of events in the survival data (=colon.surv=): 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
+#+BEGIN_SRC R  :results both :exports results  :session *R* :cache yes  
 cbind(colon.surv[, .N, by="event"],   
       colon.surv[, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE])
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 09:50:29> eeaf0152c000d398bf34c293d0e1924d1c3989f4]:
-:    event   N max.follow.up
-: 1:     1 430          2910
-: 2:     0 458          3329
+#+RESULTS[<2021-10-26 10:49:01> 83b4175b8b0e73fb3c2b430465ec24ddd4d547cf]:
+| 1 | 430 | 2910 |
+| 0 | 458 | 3329 |
 
 Number of events in the competing risks data (=colon.cr=):
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
-cbind(colon.cr[order(event)][, .N, by="event"],  
+#+BEGIN_SRC R  :results both :exports results  :session *R* :cache yes  
+cbind(colon.cr[order(event)][, .N, by="event"],   
       colon.cr[order(event)][, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE]) 
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 09:50:34> a1624bd278780758382f73d8d56c73c69cd6d053]:
-:    event   N max.follow.up
-: 1:     0 405          3329
-: 2:     1 446          2695
-: 3:     2  37          2789
+#+RESULTS[<2021-10-26 10:48:53> 5974e6de04a24aa9cf8f3a733f4d2cb0acaca40d]:
+| 0 | 405 | 3329 |
+| 1 | 446 | 2695 |
+| 2 |  37 | 2789 |
 
 Note that for both datasets we simply removed observations with
 missing covariates.
@@ -100,8 +98,8 @@ To create a simulated version of the survival data, we run code as
 follows:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-#-- fit models to data;  
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+#-- fit models to data;   
 fit.colon <- fit.colon.fun(
     formula.1=Surv(time, event==1)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
     formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
@@ -112,7 +110,7 @@ set.seed(15)
 (sim.colon.surv <- synthesize.colon.fun(fit.colon=fit.colon, d=colon.surv, name.treat="rx", event.name="event")) 
 #+END_SRC   
 
-#+RESULTS[<2021-10-26 10:18:13> c80798bd76e7a34a57b2588edd17985ee294fc8d]:
+#+RESULTS[<2021-10-26 10:48:28> a2e7a0e328f378c138b26ac6c4b3dc5603e36653]:
 #+begin_example
      sex age obstruct perfor adhere nodes differ extent surg rx.num      rx      time event
   1:   0  69        0      0      0    12      2      3    0      3 Lev+5FU  634.0321     1
@@ -132,9 +130,9 @@ To create a simulated version of the competing risks data, we run code
 as follows:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
 #-- fit models to data; 
-fit.colon.cr <- fit.colon.fun(    
+fit.colon.cr <- fit.colon.fun(     
     formula.1=Surv(time, event==1)~rx+sex+differ+age+nodes.squared+obstruct+perfor+adhere+extent+surg+rx*sex+rx*perfor+rx*age,
     formula.2=Surv(time, event==2)~rx+sex+nodes+differ+age+obstruct+adhere+extent+surg,
     formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
@@ -145,7 +143,7 @@ set.seed(31)
 (sim.colon.cr <- synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event"))
 #+END_SRC   
 
-#+RESULTS[<2021-10-26 10:38:02> 1a6ae9c8471fb231315eb216de223d10a013388c]:
+#+RESULTS[<2021-10-26 10:48:41> da9e677c1c87f49568e8fd420adc172d9d7f5707]:
 #+begin_example
      sex age obstruct perfor adhere nodes differ extent surg nodes.squared rx.num      rx      time event
   1:   0  55        1      0      0     4      1      3    0            16      2     Lev 2590.1288     0
