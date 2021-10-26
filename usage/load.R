@@ -15,6 +15,7 @@ library(ggplot2)
 library(gridExtra)
 library(survival)
 library(riskRegression)
+library(MASS)
 
 #-------------------------------------------------------------------------------------------#
 ## source code
