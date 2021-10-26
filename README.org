@@ -311,7 +311,7 @@ probability distribution of treatment (specified in the argument
 =treat.model=), we similarly include main effects of all
 covariates. To get the treatment-specific absolute risk of cancer
 relapse under levamisole plus fluorouracil treatment we set the
-argument =treat.effect= to ="Lev+5FU"= and the argument =target= to
+argument =treat.effect= to =Lev+5FU= and the argument =target= to
 =1=. We specify the time-horizon by =tau= and note that the time
 variable of the data is measured in days. \\
 
@@ -458,6 +458,81 @@ $convergenced.at.step
 #+end_example
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
+
+*** Applying a Cox super learner
+
+First we specify the Cox regression models to include in the library
+of the super learner:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+sl.models <- list(mod1=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                  mod2=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared),
+                  mod2a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared),
+                  mod3=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age),
+                  mod3a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age),
+                  mod4=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex),
+                  mod4a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex), 
+                  mod5=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*perfor),
+                  mod5a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*perfor), 
+                  mod6=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex+rx*perfor),
+                  mod6a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex+rx*perfor))
+#+END_SRC  
+
+Then we tell =contmle= to use this library by specifying the argument
+=sl.models= and changing the choice of =fit= for the first list
+element of the =estimation= argument to =sl=. (Note that we further
+specify the argument ~verbose.sl=TRUE~ to see what Cox model was
+picked).
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+fit.tmle.sl.F1.Lev5FU.3yrs <-  
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="sl",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",  
+            sl.models=sl.models, verbose.sl=TRUE,
+            target=1,  
+            tau=3*365.25)  
+#+END_SRC  
+
+#+RESULTS[<2021-10-26 13:05:21> 78f089e27eb8cd8738a1b081300ad644b86a1edf]:
+: [1] "model picked for relapse: "
+: Surv(time, event == 1) ~ rx + sex + age + obstruct + perfor + 
+:     differ + adhere + extent + surg + nodes.squared + rx * age + 
+:     rx * sex
+
+Look at the output: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+fit.tmle.sl.F1.Lev5FU.3yrs
+#+END_SRC  
+
+#+RESULTS[<2021-10-26 13:07:31> 0f922d98035f6950e525e34a486d41debf1fe864]:
+#+begin_example
+$init
+$init$F1
+         tau=1095.75
+init.est  0.29067337
+init.se   0.02539756
+
+
+$tmle
+$tmle$F1
+         tau=1095.75
+tmle.est 0.2733065  
+tmle.se  0.02535923
+#+end_example
+
 
 ** Analysis of the =colon= survival data
 
@@ -905,7 +980,7 @@ nickname       Bunny-Wunnies Freak Out
 and the following package versions:
 
 #+BEGIN_SRC R  :results output raw drawer  :exports results  :session *R* :cache yes  
-pp <- c("data.table", "zoo", "glmnet", "stringr", "nleqslv", "prodlim", "ggplot2", "gridExtra", "survival", "riskRegression")
+pp <- c("data.table", "zoo", "glmnet", "stringr", "nleqslv", "prodlim", "ggplot2", "gridExtra", "survival", "riskRegression", "MASS")
 Publish::org(data.table(Package=pp,Version=sapply(pp,function(x) as.character(packageVersion(x)))))
 #+END_SRC
 
