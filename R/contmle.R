@@ -280,7 +280,7 @@ contmle <- function(dt,
             #rm(dt.tmp)
         
             if (verbose.sl) print(paste0("model picked for ", fit.name, ": "))
-            if (verbose.sl) print(fit.model)
+            if (verbose) print(fit.model)
             
             estimation[[each]]$model <- fit.model
 
