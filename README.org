@@ -287,9 +287,9 @@ probability distribution of treatment (specified in the argument
 =treat.model=), we similarly include main effects of all
 covariates. To get the treatment-specific absolute risk of cancer
 relapse under levamisole plus fluorouracil treatment we set the
-argument =treat.effect= to ="Lev+5FU"= and the argument =target= to
-=1=. We specify the time-horizon by =tau= and note that the time
-variable of the data is measured in days. \\
+argument =treat.effect= to \texttt{"Lev+5FU"} and the argument
+=target= to =1=. We specify the time-horizon by =tau= and note that
+the time variable of the data is measured in days. \\
 
 The function returns the initial (untargeted) estimate for the target
 parameter, the Kaplan-Meier estimate and the targeted estimate along
