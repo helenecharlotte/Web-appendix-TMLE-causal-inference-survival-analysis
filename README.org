@@ -42,10 +42,10 @@ one for cancer recurrence and one for death. This allows us to work
 with the data in two different forms, for two different purposes, as
 follows:
 
-- Survival outcome data. :: We consider treatment effect estimation in
+- Survival outcome data: :: We consider treatment effect estimation in
      the setting where the event of interest is all-cause mortality
-     and there are no competing causes. 
-- Competing risks data. :: We consider treatment effect estimation in
+     and there are no competing causes.
+- Competing risks data: :: We consider treatment effect estimation in
      the setting with two competing causes being cancer recurrence and
      death.
 
@@ -89,6 +89,7 @@ out
 
 Note that for both datasets we simply removed observations with
 missing covariates.
+
 
 ** Simulated version of the =colon= data
 
@@ -168,7 +169,8 @@ set.seed(31)
 *** True values of target parameters (Box 1)
 
 To compute the approximations to the true values of the target
-parameters, we run the following code: 
+parameters for the simulated competing risks data, we run the
+following code:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
@@ -269,6 +271,75 @@ rownames(tab2) <- c("F1", "F2")
 colnames(tab2) <- paste0((1:10)/2)
 print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3)) 
 #+END_SRC    
+
+
+** Targeting hazard estimators for real-valued parameters
+
+We use our TMLE function to target the real-valued parameter being the
+absolute risk of cancer relapse after 3 years of follow-up under
+treatment with levamisole plus fluorouracil as follows. \\
+
+Note that we simply use a Cox regression including main effects of all
+covariates for initial estimation of each cause-specific hazards and
+also for the hazard of censoring (specified in the =estimation=
+argument, with list elements for each hazard). To estimate the
+probability distribution of treatment (specified in the argument
+=treat.model=), we similarly include main effects of all
+covariates. To get the treatment-specific absolute risk of cancer
+relapse under levamisole plus fluorouracil treatment we set the
+argument =treat.effect= to ="Lev+5FU"= and the argument =target= to
+=1=. We specify the time-horizon by =tau= and note that the time
+variable of the data is measured in days. \\
+
+The function returns the initial (untargeted) estimate for the target
+parameter, the Kaplan-Meier estimate and the targeted estimate along
+with its standard error computed based on the efficient influence
+function.
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+(fit.tmle.F1.Lev5FU.3yrs <- 
+     contmle(sim.colon.cr,  
+             estimation=list("relapse"=list(fit="cox",
+                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                             "death"=list(fit="cox",
+                                          model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                             "cens"=list(fit="cox",
+                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                             ),
+             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+             treat.effect="Lev+5FU",   
+             output.km=TRUE, 
+             target=1, iterative=TRUE, 
+             tau=3*365.25)) 
+#+END_SRC   
+
+#+RESULTS[<2021-10-26 11:16:28> 4fde8ef84e687d2368b16f764a018467840814f9]:
+#+begin_example
+$init
+$init$F1
+         tau=1095.75
+init.est  0.30605538
+init.se   0.02594074
+
+
+$km
+$km$F1
+       tau=1095.75
+km.est  0.29184130
+km.se   0.02732888
+
+
+$tmle
+$tmle$F1
+         tau=1095.75
+tmle.est 0.2778811  
+tmle.se  0.02584953 
+#+end_example
+
+
+** Targeting hazard estimators for multi-dimensional parameters
 
 * Dependencies :noexport:
 
