@@ -65,7 +65,7 @@ contmle <- function(dt,
                     #-- dont use;
                     output.mat=FALSE, save.sl.pick=FALSE, 
                     #-- models incorporated in super learner;
-                    sl.change.points=(0:12)/10, 
+                    sl.change.points=0,#(0:12)/10, 
                     sl.models=NULL
                     ## list(mod1=list(Surv(time, delta==1)~A+L1+L2+L3),
                     ##      mod2=list(Surv(time, delta==1)~A+L1.squared+L2+L3),
