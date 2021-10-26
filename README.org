@@ -273,7 +273,7 @@ print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3))
 #+END_SRC    
 
 
-** Targeting hazard estimators for real-valued parameters
+*** Targeting hazard estimators for real-valued parameter
 
 We here show the code to apply our TMLE function to target the
 real-valued parameter being the absolute risk of cancer relapse after
@@ -345,7 +345,7 @@ tmle.se  0.02584953
 #+end_example
 
 
-** Targeting hazard estimators for multi-dimensional parameters
+*** Targeting hazard estimators for multivariate parameter
 
 We here show the code to apply our TMLE function to target the
 multivariate parameter being the absolute risk of cancer relapse /and/
