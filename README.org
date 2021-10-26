@@ -19,6 +19,17 @@ involved with this.
 
 ** Overview
 
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#data-example][Presentation of the data example]]
+
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#simulated-version-of-the-colon-data][Simulated version of the data example]]
+
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#true-values-of-target-parameters-box-1][Computing true values of target parameters]]
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-real-valued-parameter][Targeting hazard estimators for real-valued parameter]]
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-multivariate-parameter][Targeting hazard estimators for multivariate parameter]]
+
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
+
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-competing-risks-data][Analysis of the colon competing risks data]]
 
 *Note:* To run any of the code below you need to load the following
 =R= script:
