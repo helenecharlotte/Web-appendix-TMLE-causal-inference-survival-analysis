@@ -957,10 +957,10 @@ fit.contmle.F1.10
 The code has been tested with the following R version
 
 #+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
-version 
+version  
 #+END_SRC
 
-#+RESULTS[<2021-10-26 09:13:15> 1df30d9c818626e8157399cee494b2b432f3eaf5]:
+#+RESULTS[<2021-10-26 13:12:28> 85f1e83108ae4e1dd460050259276acda3bdd3cf]:
 #+begin_example
                _                           
 platform       x86_64-pc-linux-gnu         
@@ -983,18 +983,22 @@ and the following package versions:
 
 #+BEGIN_SRC R  :results output raw drawer  :exports results  :session *R* :cache yes  
 pp <- c("data.table", "zoo", "glmnet", "stringr", "nleqslv", "prodlim", "ggplot2", "gridExtra", "survival", "riskRegression", "MASS")
-Publish::org(data.table(Package=pp,Version=sapply(pp,function(x) as.character(packageVersion(x)))))
+Publish::org(data.table(Package=pp,Version=sapply(pp,function(x) as.character(packageVersion(x))))) 
 #+END_SRC
 
-#+RESULTS[<2021-10-26 09:16:52> d8d1bcae67f94c7406bb1a22603134875ff22f9c]:
-:results:
-| Package    | Version |
-|------------+---------|
-| data.table |  1.13.0 |
-| zoo        |   1.8.8 |
-| stringr    |   1.4.0 |
-| ltmle      |   1.2.0 |
-| parallel   |   4.0.2 |
-| foreach    |   1.5.0 |
-| doParallel |  1.0.15 |
-:end:
+#+RESULTS[<2021-10-26 13:12:32> 5277b86706f38c0f421795154abdeb26ccff69db]:
+:RESULTS:
+| Package        |    Version |
+|----------------+------------|
+| data.table     |     1.14.0 |
+| zoo            |      1.8.9 |
+| glmnet         |        4.1 |
+| stringr        |      1.4.0 |
+| nleqslv        |      3.3.2 |
+| prodlim        | 2019.11.13 |
+| ggplot2        |      3.3.5 |
+| gridExtra      |        2.3 |
+| survival       |      3.2.7 |
+| riskRegression |  2021.6.30 |
+| MASS           |     7.3.53 |
+:END:
