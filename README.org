@@ -81,8 +81,8 @@ colnames(out) <- c("event", "N", "max follow-up")
 out
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 10:52:45> 69107f9b4d0c1b098d8836cf6b851c33986fe64d]:
-:    event   N max follow-up
+#+RESULTS[<2021-10-26 10:59:58> 69107f9b4d0c1b098d8836cf6b851c33986fe64d]:
+:   event   N max follow-up
 : 1:     0 405          3329
 : 2:     1 446          2695
 : 3:     2  37          2789
@@ -165,6 +165,135 @@ set.seed(31)
 888:   1  42        1      0      0     5      2      3    0            25      1     Obs  525.6158     1
 #+end_example
 
+*** True values of target parameters (Box 1)
+
+To compute the approximations to the true values of the target
+parameters, we run the following code: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+true.a0 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+                                                              n=1e6, get.true.value=0, tau=tt*365.25)) 
+true.a1 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+                                                              n=1e6, get.true.value=1, tau=tt*365.25))   
+true.a2 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+                                                              n=1e6, get.true.value=2, tau=tt*365.25))
+#+END_SRC   
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+message("Absolute risks under treatment=Obs:")  
+tab0 <- rbind(sapply(true.a0, function(x) x["F1"]), 
+              sapply(true.a0, function(x) x["F2"])) 
+rownames(tab0) <- c("F1", "F2") 
+colnames(tab0) <- paste0((1:10)/2)
+print(tab0)
+message("")
+message("Absolute risks under treatment=Lev:") 
+tab1 <- rbind(sapply(true.a1, function(x) x["F1"]), 
+              sapply(true.a1, function(x) x["F2"]))
+rownames(tab1) <- c("F1", "F2") 
+colnames(tab1) <- paste0((1:10)/2) 
+print(tab1)
+message("")
+message("Absolute risks under treatment=Lev+5FU:") 
+tab2 <- rbind(sapply(true.a2, function(x) x["F1"]), 
+              sapply(true.a2, function(x) x["F2"]))
+rownames(tab2) <- c("F1", "F2") 
+colnames(tab2) <- paste0((1:10)/2)
+print(tab2)
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 11:03:24> c713c541118ae841f940cfe9779e4624741a75be]:
+#+begin_example
+Absolute risks under treatment=Obs:
+ 
+       0.5        1      1.5        2      2.5        3      3.5       4      4.5        5
+F1 0.146465 0.227907 0.288342 0.339962 0.382316 0.419372 0.452278 0.48266 0.508024 0.532319
+F2 0.000400 0.001145 0.002186 0.003464 0.004639 0.005960 0.007595 0.00901 0.010475 0.011990
+
+Absolute risks under treatment=Lev:
+ 
+       0.5        1      1.5        2      2.5        3      3.5        4      4.5        5
+F1 0.137236 0.212368 0.271814 0.320762 0.361983 0.397857 0.430558 0.459212 0.486208 0.509233
+F2 0.000235 0.000755 0.001475 0.002178 0.003173 0.004224 0.005209 0.006190 0.007314 0.008595
+
+Absolute risks under treatment=Lev+5FU:
+ 
+       0.5        1      1.5        2      2.5        3      3.5        4      4.5        5
+F1 0.088497 0.139775 0.179475 0.214357 0.244999 0.272068 0.296521 0.318285 0.339306 0.357575
+F2 0.000180 0.000538 0.001043 0.001834 0.002531 0.003325 0.004253 0.005287 0.006230 0.007313
+#+end_example
+
+
+*** Produce Table 2 :noexport: 
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+library(xtable)
+tab0 <- rbind(sapply(true.a0, function(x) x["F1"]), 
+              sapply(true.a0, function(x) x["F2"])) 
+rownames(tab0) <- c("F1", "F2") 
+colnames(tab0) <- paste0((1:10)/2)
+print(xtable(tab0, align=rep("c", length(true.a0)+1), digits=3)) 
+
+tab1 <- rbind(sapply(true.a1, function(x) x["F1"]), 
+              sapply(true.a1, function(x) x["F2"]))
+rownames(tab1) <- c("F1", "F2") 
+colnames(tab1) <- paste0((1:10)/2) 
+print(xtable(tab1, align=rep("c", length(true.a1)+1), digits=3)) 
+
+tab2 <- rbind(sapply(true.a2, function(x) x["F1"]), 
+              sapply(true.a2, function(x) x["F2"]))
+rownames(tab2) <- c("F1", "F2") 
+colnames(tab2) <- paste0((1:10)/2)
+print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3)) 
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 10:59:30> a2023f4f58d5a172e740bf8757d8ebb725cc2d78]:
+#+begin_example
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Tue Oct 26 10:59:30 2021
+\begin{table}[ht]
+\centering
+\begin{tabular}{ccccccccccc}
+  \hline
+ & 0.5 & 1 & 1.5 & 2 & 2.5 & 3 & 3.5 & 4 & 4.5 & 5 \\ 
+  \hline
+F1 & 0.146 & 0.228 & 0.288 & 0.340 & 0.382 & 0.419 & 0.452 & 0.483 & 0.508 & 0.532 \\ 
+  F2 & 0.000 & 0.001 & 0.002 & 0.003 & 0.005 & 0.006 & 0.008 & 0.009 & 0.010 & 0.012 \\ 
+   \hline
+\end{tabular}
+\end{table}
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Tue Oct 26 10:59:30 2021
+\begin{table}[ht]
+\centering
+\begin{tabular}{ccccccccccc}
+  \hline
+ & 0.5 & 1 & 1.5 & 2 & 2.5 & 3 & 3.5 & 4 & 4.5 & 5 \\ 
+  \hline
+F1 & 0.137 & 0.212 & 0.272 & 0.321 & 0.362 & 0.398 & 0.431 & 0.459 & 0.486 & 0.509 \\ 
+  F2 & 0.000 & 0.001 & 0.001 & 0.002 & 0.003 & 0.004 & 0.005 & 0.006 & 0.007 & 0.009 \\ 
+   \hline
+\end{tabular}
+\end{table}
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Tue Oct 26 10:59:30 2021
+\begin{table}[ht]
+\centering
+\begin{tabular}{ccccccccccc}
+  \hline
+ & 0.5 & 1 & 1.5 & 2 & 2.5 & 3 & 3.5 & 4 & 4.5 & 5 \\ 
+  \hline
+F1 & 0.088 & 0.140 & 0.179 & 0.214 & 0.245 & 0.272 & 0.297 & 0.318 & 0.339 & 0.358 \\ 
+  F2 & 0.000 & 0.001 & 0.001 & 0.002 & 0.003 & 0.003 & 0.004 & 0.005 & 0.006 & 0.007 \\ 
+   \hline
+\end{tabular}
+\end{table}
+#+end_example
 
 * Dependencies :noexport:
 
