@@ -105,7 +105,10 @@ out
 : 3:     2  37          2789
 
 Note that for both datasets we simply removed observations with
-missing covariates.
+missing covariates.\\
+
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top.]]
+
 
 
 ** Simulated version of the =colon= data
