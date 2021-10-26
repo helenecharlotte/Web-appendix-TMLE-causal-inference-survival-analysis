@@ -111,10 +111,10 @@ fit.colon <- fit.colon.fun(
     formula.1=Surv(time, event==1)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
     formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
     formula.treat=rx~sex+age+nodes+differ+obstruct+perfor+adhere+extent+surg,
-    d=colon.surv)  
+    d=copy(colon.surv))  
 #-- here we simulate data (fixed seed);  
 set.seed(15)   
-(sim.colon.surv <- synthesize.colon.fun(fit.colon=fit.colon, d=colon.surv, name.treat="rx", event.name="event")) 
+(sim.colon.surv <- synthesize.colon.fun(fit.colon=fit.colon, d=copy(colon.surv), name.treat="rx", event.name="event")) 
 #+END_SRC   
 
 #+RESULTS[<2021-10-26 10:48:28> a2e7a0e328f378c138b26ac6c4b3dc5603e36653]:
@@ -144,10 +144,10 @@ fit.colon.cr <- fit.colon.fun(
     formula.2=Surv(time, event==2)~rx+sex+nodes+differ+age+obstruct+adhere+extent+surg,
     formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
     formula.treat=rx~sex+age+nodes+differ+obstruct+perfor+adhere+extent+surg,
-    d=colon.cr)  
+    d=copy(colon.cr))  
 #-- here we simulate data (fixed seed); 
 set.seed(31)      
-(sim.colon.cr <- synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event"))
+(sim.colon.cr <- synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event"))
 #+END_SRC   
 
 #+RESULTS[<2021-10-26 10:48:41> da9e677c1c87f49568e8fd420adc172d9d7f5707]:
@@ -174,11 +174,11 @@ following code:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-true.a0 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+true.a0 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event", 
                                                               n=1e6, get.true.value=0, tau=tt*365.25)) 
-true.a1 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+true.a1 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event", 
                                                               n=1e6, get.true.value=1, tau=tt*365.25))   
-true.a2 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+true.a2 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event", 
                                                               n=1e6, get.true.value=2, tau=tt*365.25))
 #+END_SRC   
 
@@ -432,6 +432,418 @@ tmle.se   0.02660447
 $convergenced.at.step
 [1] 10
 #+end_example
+
+
+
+** Analysis of the =colon= survival data
+
+- Fixed time-point :: 
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.colon.surv.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.surv, 
+            estimation=list("outcome"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,   
+            output.km=TRUE, 
+            tau=3*365.25)}) 
+names(fit.colon.surv.3yrs) <- c("Lev", "Lev+5FU", "Obs")
+#+END_SRC    
+
+Treatment-specific survival probabilities: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+(fit.tmle <- do.call("cbind", lapply(1:length(fit.colon.surv.3yrs), function(jj) {
+    fit.jj <- fit.colon.surv.3yrs[[jj]]
+    out.jj <- fit.jj$tmle
+    colnames(out.jj) <- names(fit.colon.surv.3yrs)[jj] 
+    return(out.jj) 
+})))
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 11:47:14> fc3fa6aa9def1543ddfd1ccfb3a69260a960f9ae]:
+:                 Lev   Lev+5FU       Obs
+: tmle.est 0.36215867 0.2521322 0.3363260
+: tmle.se  0.02708732 0.0252459 0.0258185
+
+Average treatment effects: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+message("Lev versus Obs:")
+rbind(est=fit.tmle["tmle.est", "Lev"]-fit.tmle["tmle.est", "Obs"], 
+      se=sqrt(fit.tmle["tmle.se", "Lev"]^2+fit.tmle["tmle.se", "Obs"]^2), 
+      ci.lwr=fit.tmle["tmle.est", "Lev"]-fit.tmle["tmle.est", "Obs"]-1.96*sqrt(fit.tmle["tmle.se", "Lev"]^2+fit.tmle["tmle.se", "Obs"]^2), 
+      ci.upr=fit.tmle["tmle.est", "Lev"]-fit.tmle["tmle.est", "Obs"]+1.96*sqrt(fit.tmle["tmle.se", "Lev"]^2+fit.tmle["tmle.se", "Obs"]^2))
+message("")
+message("")
+message("Lev+5FU versus Obs:")
+rbind(est=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"], 
+      se=sqrt(fit.tmle["tmle.se", "Lev+5FU"]^2+fit.tmle["tmle.se", "Obs"]^2), 
+      ci.lwr=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"]-1.96*sqrt(fit.tmle["tmle.se", "Lev+5FU"]^2+fit.tmle["tmle.se", "Obs"]^2), 
+      ci.upr=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"]+1.96*sqrt(fit.tmle["tmle.se", "Lev+5FU"]^2+fit.tmle["tmle.se", "Obs"]^2)) 
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 11:48:09> c7ef265ecb9aa82efec861e2dad9cf6fd50bb6dd]:
+#+begin_example
+Lev versus Obs:
+ 
+             [,1]
+est     0.02583270
+se      0.03742082
+ci.lwr -0.04751211
+ci.upr  0.09917751
+
+
+Lev+5FU versus Obs:
+ 
+             [,1]
+est    -0.08419382
+se      0.03611026
+ci.lwr -0.15496992
+ci.upr -0.01341771
+#+end_example
+
+
+
+- Multiple time-points :: 
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.colon.surv.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.surv, 
+            estimation=list("outcome"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,   
+            output.km=TRUE, 
+            tau=(1:10)/2*365.25)}) 
+names(fit.colon.surv.10) <- c("Lev", "Lev+5FU", "Obs")
+#+END_SRC    
+
+Look at the output from the function call: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+fit.colon.surv.10  
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 11:57:14> 6675324e9e6ef96cbc36177557ef5a54bdf8e649]:
+#+begin_example
+$Lev
+$Lev$init
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+init.est  0.02835222 0.08945904  0.15406173 0.23472927  0.29148191  0.33874400   0.38782289 0.41753055   0.43171327
+init.se   0.01077263 0.01750937  0.02101924 0.02455774  0.02594145  0.02710851   0.02751253 0.02784702   0.02790259
+         tau=1826.25
+init.est  0.45422687
+init.se   0.02818284
+
+$Lev$km
+       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+km.est  0.03401361 0.09863946  0.15986395 0.24489796  0.30272109   0.3673469   0.41836735 0.43537415    0.4421976
+km.se   0.01057154 0.01739005  0.02137354 0.02507967  0.02679483   0.0281156   0.02876932 0.02891599    0.0289663
+       tau=1826.25
+km.est  0.45246391
+km.se   0.02903328
+
+$Lev$tmle
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+tmle.est  0.03307466 0.09805916  0.16124264 0.24559780  0.30402459   0.3594241   0.40453069 0.42612078   0.43580600
+tmle.se   0.01076537 0.01748946  0.02099921 0.02452176  0.02592174   0.0270674   0.02750496 0.02784501   0.02790233
+         tau=1826.25
+tmle.est  0.45270915
+tmle.se   0.02817468
+
+$Lev$convergenced.at.step
+[1] 22
+
+
+$`Lev+5FU`
+$`Lev+5FU`$init
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+init.est  0.02124002 0.06775297  0.11801353 0.18240125  0.22886176  0.26834598   0.31017192 0.33592663   0.34834504
+init.se   0.01084225 0.01669286  0.01940754 0.02277205  0.02454795  0.02529375   0.02660409 0.02752964   0.02796546
+         tau=1826.25
+init.est   0.3682281
+init.se    0.0281170
+
+$`Lev+5FU`$km
+       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+km.est  0.03114187 0.08304498  0.12456747 0.19031142  0.23529412  0.25259516   0.28373702 0.31506634    0.3396537
+km.se   0.01021771 0.01623236  0.01942517 0.02309099  0.02495191  0.02555886   0.02651828 0.02733759    0.0278911
+       tau=1826.25
+km.est  0.36426047
+km.se   0.02836012
+
+$`Lev+5FU`$tmle
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+tmle.est  0.03090673 0.08322442  0.12726155 0.19061829  0.23063810  0.25433631   0.28874694 0.32014815   0.34008081
+tmle.se   0.01080327 0.01666590  0.01939296 0.02276702  0.02455554  0.02525886   0.02654892 0.02749183   0.02796285
+         tau=1826.25
+tmle.est   0.3667224
+tmle.se    0.0281270
+
+$`Lev+5FU`$convergenced.at.step
+[1] 37
+
+
+$Obs
+$Obs$init
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+init.est 0.030735875 0.09663097  0.16579619 0.25143732  0.31119010  0.36062085   0.41161910 0.44231641   0.45692413
+init.se  0.007170564 0.01499860  0.02002748 0.02297368  0.02470325  0.02586371   0.02680666 0.02727022   0.02735704
+         tau=1826.25
+init.est  0.48004763
+init.se   0.02756949
+
+$Obs$km
+       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+km.est 0.016393443 0.07540984  0.15751213 0.23649536  0.29573279  0.34838829   0.40433475 0.44053540   0.45040830
+km.se  0.007271029 0.01511954  0.02086899 0.02435665  0.02616458  0.02731988   0.02814289 0.02847059   0.02853308
+       tau=1826.25
+km.est  0.48006894
+km.se   0.02865511
+
+$Obs$tmle
+         tau=182.625 tau=365.25 tau=547.875 tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+tmle.est 0.016878445 0.07388697  0.15237946 0.2254381  0.28409610  0.33628076   0.39451403 0.43021249   0.44365133
+tmle.se  0.007142577 0.01497606  0.02003331 0.0229260  0.02466255  0.02582577   0.02679395 0.02726544   0.02734601
+         tau=1826.25
+tmle.est  0.47194228
+tmle.se   0.02756736
+
+$Obs$convergenced.at.step
+[1] 69
+#+end_example
+
+** Analysis of the =colon= competing risks data
+
+- Fixed time-point :: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.contmle.F1.F2.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.cr, 
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,  
+            sl.models=NULL, 
+            output.km=TRUE, 
+            target=1:2, 
+            tau=3*365.25)}) 
+names(fit.contmle.F1.F2.3yrs) <- c("Lev", "Lev+5FU", "Obs")
+#+END_SRC    
+
+Look at the output from the function call: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+fit.contmle.F1.F2.3yrs
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 12:35:08> 21558932507c4cfd5f4acc5ca83906bb9e8d82e7]:
+#+begin_example
+$Lev
+$Lev$init
+$Lev$init$F1
+         tau=1095.75
+init.est  0.47162155
+init.se   0.02953647
+
+$Lev$init$F2
+         tau=1095.75
+init.est 0.016863909
+init.se  0.007633557
+
+$Lev$init$S
+         tau=1095.75
+init.est   0.5115145
+init.se    0.0295077
+
+
+$Lev$km
+$Lev$km$F1
+       tau=1095.75
+km.est  0.47619048
+km.se   0.02912751
+
+$Lev$km$F2
+       tau=1095.75
+km.est 0.020408163
+km.se  0.008246143
+
+
+$Lev$tmle
+$Lev$tmle$F1
+         tau=1095.75
+tmle.est   0.4811181
+tmle.se    0.0294812
+
+$Lev$tmle$F2
+         tau=1095.75
+tmle.est 0.017050344
+tmle.se  0.007632803
+
+$Lev$tmle$S
+         tau=1095.75
+tmle.est  0.50183159
+tmle.se   0.02945199
+
+
+$Lev$convergenced.at.step
+[1] 9
+
+
+$`Lev+5FU`
+$`Lev+5FU`$init
+$`Lev+5FU`$init$F1
+         tau=1095.75
+init.est  0.34077206
+init.se   0.02741342
+
+$`Lev+5FU`$init$F2
+         tau=1095.75
+init.est 0.025918531
+init.se  0.008911165
+
+$`Lev+5FU`$init$S
+         tau=1095.75
+init.est  0.63330941
+init.se   0.02797136
+
+
+$`Lev+5FU`$km
+$`Lev+5FU`$km$F1
+       tau=1095.75
+km.est  0.33564014
+km.se   0.02777728
+
+$`Lev+5FU`$km$F2
+       tau=1095.75
+km.est 0.024221453
+km.se  0.009043297
+
+
+$`Lev+5FU`$tmle
+$`Lev+5FU`$tmle$F1
+         tau=1095.75
+tmle.est  0.33303482
+tmle.se   0.02740082
+
+$`Lev+5FU`$tmle$F2
+         tau=1095.75
+tmle.est 0.026138385
+tmle.se  0.008912386
+
+$`Lev+5FU`$tmle$S
+         tau=1095.75
+tmle.est  0.64082680
+tmle.se   0.02795636
+
+
+$`Lev+5FU`$convergenced.at.step
+[1] 4
+
+
+$Obs
+$Obs$init
+$Obs$init$F1
+         tau=1095.75
+init.est  0.49148573
+init.se   0.02778776
+
+$Obs$init$F2
+         tau=1095.75
+init.est 0.022792274
+init.se  0.006850221
+
+$Obs$init$S
+         tau=1095.75
+init.est  0.48572199
+init.se   0.02772329
+
+
+$Obs$km
+$Obs$km$F1
+       tau=1095.75
+km.est  0.48932819
+km.se   0.02865829
+
+$Obs$km$F2
+       tau=1095.75
+km.est 0.019752491
+km.se  0.007983817
+
+
+$Obs$tmle
+$Obs$tmle$F1
+         tau=1095.75
+tmle.est  0.48233846
+tmle.se   0.02778264
+
+$Obs$tmle$F2
+         tau=1095.75
+tmle.est 0.018102716
+tmle.se  0.006833954
+
+$Obs$tmle$S
+         tau=1095.75
+tmle.est  0.49955882
+tmle.se   0.02770872
+
+
+$Obs$convergenced.at.step
+[1] 17
+#+end_example
+
+
+- Multiple time-points :: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.contmle.F1.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.cr, 
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,  
+            sl.models=NULL, 
+            simultaneous.ci=TRUE,
+            output.km=TRUE, 
+            target=1, 
+            tau=(1:10)/2*365.25)}) 
+names(fit.contmle.F1.10) <- c("Lev", "Lev+5FU", "Obs")
+#+END_SRC    
+
+Look at the output from the function call: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+fit.contmle.F1.10
+#+END_SRC    
 
 
 * Dependencies :noexport:
