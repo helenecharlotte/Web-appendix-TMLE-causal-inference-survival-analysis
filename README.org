@@ -26,6 +26,7 @@ involved with this.
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#true-values-of-target-parameters-box-1][Computing true values of target parameters]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-real-valued-parameter][Targeting hazard estimators for real-valued parameter]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-multivariate-parameter][Targeting hazard estimators for multivariate parameter]]
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#applying-a-cox-super-learner][Applying a Cox super learner]]
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
 
@@ -513,7 +514,7 @@ fit.tmle.sl.F1.Lev5FU.3yrs <-
 Look at the output: 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
 fit.tmle.sl.F1.Lev5FU.3yrs
 #+END_SRC  
 
@@ -533,6 +534,7 @@ tmle.est 0.2733065
 tmle.se  0.02535923
 #+end_example
 
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 ** Analysis of the =colon= survival data
 
