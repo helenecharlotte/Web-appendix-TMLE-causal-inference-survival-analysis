@@ -107,7 +107,7 @@ out
 Note that for both datasets we simply removed observations with
 missing covariates.\\
 
-[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top.]]
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 
 
@@ -185,6 +185,8 @@ set.seed(31)
 887:   1  50        1      0      1     1      2      3    0             1      2     Lev  127.1821     1
 888:   1  42        1      0      0     5      2      3    0            25      1     Obs  525.6158     1
 #+end_example
+
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** True values of target parameters (Box 1)
 
@@ -292,6 +294,7 @@ colnames(tab2) <- paste0((1:10)/2)
 print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3)) 
 #+END_SRC    
 
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Targeting hazard estimators for real-valued parameter
 
@@ -364,6 +367,7 @@ tmle.est 0.2778811
 tmle.se  0.02584953 
 #+end_example
 
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Targeting hazard estimators for multivariate parameter
 
@@ -453,7 +457,7 @@ $convergenced.at.step
 [1] 10
 #+end_example
 
-
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 ** Analysis of the =colon= survival data
 
@@ -530,7 +534,7 @@ ci.lwr -0.15496992
 ci.upr -0.01341771
 #+end_example
 
-
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Target parameters evaluated at multiple time-points 
 
@@ -646,6 +650,8 @@ tmle.se   0.02756736
 $Obs$convergenced.at.step
 [1] 69
 #+end_example
+
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 ** Analysis of the =colon= competing risks data
 
@@ -833,6 +839,7 @@ $Obs$convergenced.at.step
 [1] 17
 #+end_example
 
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Target parameters evaluated at multiple time-points 
 
@@ -864,6 +871,7 @@ Look at the output from the function call:
 fit.contmle.F1.10
 #+END_SRC    
 
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 * Dependencies :noexport:
 
