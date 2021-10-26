@@ -275,9 +275,10 @@ print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3))
 
 ** Targeting hazard estimators for real-valued parameters
 
-We use our TMLE function to target the real-valued parameter being the
-absolute risk of cancer relapse after 3 years of follow-up under
-treatment with levamisole plus fluorouracil as follows. \\
+We here show the code to apply our TMLE function to target the
+real-valued parameter being the absolute risk of cancer relapse after
+3 years of follow-up under treatment with levamisole plus
+fluorouracil. \\
 
 Note that we simply use a Cox regression including main effects of all
 covariates for initial estimation of each cause-specific hazards and
@@ -298,8 +299,8 @@ function.
 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
-(fit.tmle.F1.Lev5FU.3yrs <- 
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.tmle.F1.Lev5FU.3yrs <- 
      contmle(sim.colon.cr,  
              estimation=list("relapse"=list(fit="cox",
                                             model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
@@ -311,8 +312,13 @@ function.
              treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
              treat.effect="Lev+5FU",   
              output.km=TRUE, 
-             target=1, iterative=TRUE, 
-             tau=3*365.25)) 
+             target=1,
+             tau=3*365.25) 
+#+END_SRC   
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+fit.tmle.F1.Lev5FU.3yrs
 #+END_SRC   
 
 #+RESULTS[<2021-10-26 11:16:28> 4fde8ef84e687d2368b16f764a018467840814f9]:
@@ -340,6 +346,93 @@ tmle.se  0.02584953
 
 
 ** Targeting hazard estimators for multi-dimensional parameters
+
+We here show the code to apply our TMLE function to target the
+multivariate parameter being the absolute risk of cancer relapse /and/
+the absolute risk of relapse-free death after 3 years of follow-up
+under treatment with levamisole plus fluorouracil. \\
+
+The only change to the function call above is setting the argument
+=target= to =1:2=. (When the argument =target= is multivariate, like
+here, the one-step TMLE is applied per default; one could also specify
+the argument =iterative= as =TRUE= to apply the iterative TMLE to
+target the two absolute risk probabilities separately).
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.tmle.F1.F2.Lev5FU.3yrs <- 
+     contmle(sim.colon.cr,  
+             estimation=list("relapse"=list(fit="cox",
+                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                             "death"=list(fit="cox",
+                                          model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                             "cens"=list(fit="cox",
+                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                             ),
+             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+             treat.effect="Lev+5FU",   
+             output.km=TRUE, 
+             target=1:2, 
+             tau=3*365.25) 
+#+END_SRC   
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+fit.tmle.F1.F2.Lev5FU.3yrs
+#+END_SRC   
+
+#+RESULTS[<2021-10-26 11:30:48> e6eaf6c7c7fc1bd03323dbac1b68040f140b9467]:
+#+begin_example
+$init
+$init$F1
+         tau=1095.75
+init.est  0.30605538
+init.se   0.02594074
+
+$init$F2
+         tau=1095.75
+init.est 0.012503259
+init.se  0.007945622
+
+$init$S
+         tau=1095.75
+init.est  0.68144137
+init.se   0.02669174
+
+
+$km
+$km$F1
+       tau=1095.75
+km.est  0.29184130
+km.se   0.02732888
+
+$km$F2
+       tau=1095.75
+km.est 0.014511430
+km.se  0.007204259
+
+
+$tmle
+$tmle$F1
+         tau=1095.75
+tmle.est  0.27774955
+tmle.se   0.02584448
+
+$tmle$F2
+         tau=1095.75
+tmle.est 0.014375801
+tmle.se  0.007923176
+
+$tmle$S
+         tau=1095.75
+tmle.est  0.70787465
+tmle.se   0.02660447
+
+
+$convergenced.at.step
+[1] 10
+#+end_example
+
 
 * Dependencies :noexport:
 
