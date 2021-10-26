@@ -448,8 +448,7 @@ $convergenced.at.step
 
 ** Analysis of the =colon= survival data
 
-- Fixed time-point :: 
-
+*** Target parameters evaluated at fixed time-point 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
@@ -524,7 +523,7 @@ ci.upr -0.01341771
 
 
 
-- Multiple time-points :: 
+*** Target parameters evaluated at multiple time-points 
 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -641,7 +640,7 @@ $Obs$convergenced.at.step
 
 ** Analysis of the =colon= competing risks data
 
-- Fixed time-point :: 
+*** Target parameters evaluated at fixed time-point
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
@@ -826,7 +825,7 @@ $Obs$convergenced.at.step
 #+end_example
 
 
-- Multiple time-points :: 
+*** Target parameters evaluated at multiple time-points 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
