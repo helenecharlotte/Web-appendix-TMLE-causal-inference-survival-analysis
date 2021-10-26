@@ -1,3 +1,212 @@
 # Web-appendix-TMLE-causal-inference-survival-analysis
-* Web appendix to: /On targeted maximum likelihood estimation for causal inference in survival and competing risks analysis/
+* Web appendix 
 
+This is the web-appendix to our manuscript entitled /On targeted/
+/maximum likelihood estimation for causal inference in survival and
+competing risks analysis/. \\
+
+We provide =R= code to apply our current implementations of TMLE for
+estimation of causal parameters in survival and competing risks
+settings; this includes the iterative and the one-step targeting
+procedures as well as super learning to combine different Cox
+regression models or variations over the Poisson-based highly adaptive
+lasso (HAL) estimator. \\
+
+Although the current implementations can be applied to new data
+setting, we emphasize that our implementations remain to be made into
+a more user-friendly software package. Current and future work is
+involved with this.
+
+* Overview
+
+
+*Note:* To run any of the code below you need to load the following
+=R= script:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
+source("./usage/load.R") 
+#+END_SRC
+
+
+* Data example 
+
+In our manuscript we use the publicly available dataset =colon= from
+the =survival= package in =R= as a running example. These are data
+from a trial on adjuvant chemotherapy for colon cancer, comparing
+levamisole treatment against levamisole treatment combined with
+fluorouracil (a chemotherapy agent) against no treatment. 
+
+The raw data available in R consist of two rows per subject:
+one for cancer recurrence and one for death. This allows us to work
+with the data in two different forms, for two different purposes, as
+follows:
+
+- Survival outcome data. :: We consider treatment effect estimation in
+     the setting where the event of interest is all-cause mortality
+     and there are no competing causes (\(J=1\)). 
+- Competing risks data. :: We consider treatment effect estimation in
+     the setting with two competing causes being cancer recurrence
+     (\(\Delta = 1\)) and death (\(\Delta = 2\)). 
+
+Here we load the =colon= data and create the two datasets above:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
+source("./usage/preprocess.colon.data.R")  
+#+END_SRC    
+
+Number of events in the survival data (=colon.surv=): 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
+cbind(colon.surv[, .N, by="event"],   
+      colon.surv[, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE])
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 09:50:29> eeaf0152c000d398bf34c293d0e1924d1c3989f4]:
+:    event   N max.follow.up
+: 1:     1 430          2910
+: 2:     0 458          3329
+
+Number of events in the competing risks data (=colon.cr=):
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
+cbind(colon.cr[order(event)][, .N, by="event"],  
+      colon.cr[order(event)][, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE]) 
+#+END_SRC    
+
+#+RESULTS[<2021-10-26 09:50:34> a1624bd278780758382f73d8d56c73c69cd6d053]:
+:    event   N max.follow.up
+: 1:     0 405          3329
+: 2:     1 446          2695
+: 3:     2  37          2789
+
+Note that for both datasets we simply removed observations with
+missing covariates.
+
+** Simulated version of the =colon= data
+
+The following script sets up functionality to create simulated
+versions of the =colon= data:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
+source("./usage/synthesize.colon.data.R")     
+#+END_SRC    
+
+To create a simulated version of the survival data, we run code as
+follows:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+#-- fit models to data;  
+fit.colon <- fit.colon.fun(
+    formula.1=Surv(time, event==1)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
+    formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
+    formula.treat=rx~sex+age+nodes+differ+obstruct+perfor+adhere+extent+surg,
+    d=colon.surv)  
+#-- here we simulate data (fixed seed);  
+set.seed(15)   
+(sim.colon.surv <- synthesize.colon.fun(fit.colon=fit.colon, d=colon.surv, name.treat="rx", event.name="event")) 
+#+END_SRC   
+
+#+RESULTS[<2021-10-26 10:18:13> c80798bd76e7a34a57b2588edd17985ee294fc8d]:
+#+begin_example
+     sex age obstruct perfor adhere nodes differ extent surg rx.num      rx      time event
+  1:   0  69        0      0      0    12      2      3    0      3 Lev+5FU  634.0321     1
+  2:   0  48        0      0      0     1      2      3    0      2     Lev  889.8198     1
+  3:   0  42        0      0      0     6      1      3    0      2     Lev  670.7178     1
+  4:   0  78        0      0      0     3      2      3    0      3 Lev+5FU 1922.5082     1
+  5:   1  49        0      0      0    10      2      3    0      1     Obs 1830.0520     1
+ ---                                                                                       
+884:   0  75        0      0      0     2      3      3    0      2     Lev  860.8502     1
+885:   0  76        0      0      0     1      2      3    0      1     Obs 1527.2115     1
+886:   0  51        0      0      0     4      2      3    1      3 Lev+5FU 2665.0731     0
+887:   0  63        0      0      0     5      2      3    1      3 Lev+5FU 2577.7704     0
+888:   1  51        1      0      0     4      2      3    1      2     Lev 2932.9771     1
+#+end_example
+
+To create a simulated version of the competing risks data, we run code
+as follows:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+#-- fit models to data; 
+fit.colon.cr <- fit.colon.fun(    
+    formula.1=Surv(time, event==1)~rx+sex+differ+age+nodes.squared+obstruct+perfor+adhere+extent+surg+rx*sex+rx*perfor+rx*age,
+    formula.2=Surv(time, event==2)~rx+sex+nodes+differ+age+obstruct+adhere+extent+surg,
+    formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
+    formula.treat=rx~sex+age+nodes+differ+obstruct+perfor+adhere+extent+surg,
+    d=colon.cr)  
+#-- here we simulate data (fixed seed); 
+set.seed(31)      
+(sim.colon.cr <- synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event"))
+#+END_SRC   
+
+#+RESULTS[<2021-10-26 10:38:02> 1a6ae9c8471fb231315eb216de223d10a013388c]:
+#+begin_example
+     sex age obstruct perfor adhere nodes differ extent surg nodes.squared rx.num      rx      time event
+  1:   0  55        1      0      0     4      1      3    0            16      2     Lev 2590.1288     0
+  2:   0  64        0      0      0     1      2      3    0             1      2     Lev  862.2267     1
+  3:   1  63        0      0      0     2      3      3    0             4      1     Obs  244.6612     1
+  4:   1  67        1      0      0     1      2      3    1             1      3 Lev+5FU 1446.1525     1
+  5:   0  45        0      0      0     3      2      3    0             9      3 Lev+5FU 3224.6467     0
+ ---                                                                                                     
+884:   0  71        0      0      0    20      2      3    0           400      3 Lev+5FU 2117.5456     0
+885:   0  34        1      0      0     3      1      3    0             9      1     Obs 2314.8256     0
+886:   1  66        0      0      0     2      2      4    0             4      1     Obs  488.2843     0
+887:   1  50        1      0      1     1      2      3    0             1      2     Lev  127.1821     1
+888:   1  42        1      0      0     5      2      3    0            25      1     Obs  525.6158     1
+#+end_example
+
+
+* Dependencies :noexport:
+
+** R-version
+
+The code has been tested with the following R version
+
+#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
+version 
+#+END_SRC
+
+#+RESULTS[<2021-10-26 09:13:15> 1df30d9c818626e8157399cee494b2b432f3eaf5]:
+#+begin_example
+               _                           
+platform       x86_64-pc-linux-gnu         
+arch           x86_64                      
+os             linux-gnu                   
+system         x86_64, linux-gnu           
+status                                     
+major          4                           
+minor          0.3                         
+year           2020                        
+month          10                          
+day            10                          
+svn rev        79318                       
+language       R                           
+version.string R version 4.0.3 (2020-10-10)
+nickname       Bunny-Wunnies Freak Out
+#+end_example
+
+and the following package versions:
+
+#+BEGIN_SRC R  :results output raw drawer  :exports results  :session *R* :cache yes  
+pp <- c("data.table", "zoo", "glmnet", "stringr", "nleqslv", "prodlim", "ggplot2", "gridExtra", "survival", "riskRegression")
+Publish::org(data.table(Package=pp,Version=sapply(pp,function(x) as.character(packageVersion(x)))))
+#+END_SRC
+
+#+RESULTS[<2021-10-26 09:16:52> d8d1bcae67f94c7406bb1a22603134875ff22f9c]:
+:results:
+| Package    | Version |
+|------------+---------|
+| data.table |  1.13.0 |
+| zoo        |   1.8.8 |
+| stringr    |   1.4.0 |
+| ltmle      |   1.2.0 |
+| parallel   |   4.0.2 |
+| foreach    |   1.5.0 |
+| doParallel |  1.0.15 |
+:end:
