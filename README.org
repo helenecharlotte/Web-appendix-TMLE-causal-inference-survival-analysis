@@ -17,7 +17,7 @@ setting, we emphasize that our implementations remain to be made into
 a more user-friendly software package. Current and future work is
 involved with this.
 
-* Overview
+** Overview
 
 
 *Note:* To run any of the code below you need to load the following
@@ -29,7 +29,7 @@ source("./usage/load.R")
 #+END_SRC
 
 
-* Data example 
+** Data example 
 
 In our manuscript we use the publicly available dataset =colon= from
 the =survival= package in =R= as a running example. These are data
@@ -44,10 +44,10 @@ follows:
 
 - Survival outcome data. :: We consider treatment effect estimation in
      the setting where the event of interest is all-cause mortality
-     and there are no competing causes (\(J=1\)). 
+     and there are no competing causes. 
 - Competing risks data. :: We consider treatment effect estimation in
-     the setting with two competing causes being cancer recurrence
-     (\(\Delta = 1\)) and death (\(\Delta = 2\)). 
+     the setting with two competing causes being cancer recurrence and
+     death.
 
 Here we load the =colon= data and create the two datasets above:
 
@@ -59,27 +59,33 @@ source("./usage/preprocess.colon.data.R")
 Number of events in the survival data (=colon.surv=): 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R  :results both :exports results  :session *R* :cache yes  
-cbind(colon.surv[, .N, by="event"],   
-      colon.surv[, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE])
+#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
+out <- cbind(colon.surv[, .N, by="event"],   
+             colon.surv[, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE])
+colnames(out) <- c("event", "N", "max follow-up")
+out   
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 10:49:01> 83b4175b8b0e73fb3c2b430465ec24ddd4d547cf]:
-| 1 | 430 | 2910 |
-| 0 | 458 | 3329 |
+#+RESULTS[<2021-10-26 10:53:24> 7eee5ed3cf7a7dcfa9165d99be6d9864b908f1d8]:
+:    event   N max follow-up
+: 1:     1 430          2910
+: 2:     0 458          3329
 
 Number of events in the competing risks data (=colon.cr=):
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R  :results both :exports results  :session *R* :cache yes  
-cbind(colon.cr[order(event)][, .N, by="event"],   
-      colon.cr[order(event)][, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE]) 
+#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
+out <- cbind(colon.cr[order(event)][, .N, by="event"],   
+             colon.cr[order(event)][, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE]) 
+colnames(out) <- c("event", "N", "max follow-up")
+out
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 10:48:53> 5974e6de04a24aa9cf8f3a733f4d2cb0acaca40d]:
-| 0 | 405 | 3329 |
-| 1 | 446 | 2695 |
-| 2 |  37 | 2789 |
+#+RESULTS[<2021-10-26 10:52:45> 69107f9b4d0c1b098d8836cf6b851c33986fe64d]:
+:    event   N max follow-up
+: 1:     0 405          3329
+: 2:     1 446          2695
+: 3:     2  37          2789
 
 Note that for both datasets we simply removed observations with
 missing covariates.
