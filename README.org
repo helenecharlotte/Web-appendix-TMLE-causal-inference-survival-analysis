@@ -227,11 +227,29 @@ F2 0.000180 0.000538 0.001043 0.001834 0.002531 0.003325 0.004253 0.005287 0.006
 #+end_example
 
 
-*** Produce Table 2 :noexport: 
+We see for example that the average treatment effect of levamisole
+    treatment compared to no treatment on the cause-one specific
+    absolute risk beyond three years is:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
+message("Average treatment effect of levamisole compared to no treatment:") 
+round(as.numeric(true.a1[(1:10)/2==3][[1]]["F1"] - true.a0[(1:10)/2==3][[1]]["F1"]),4) 
+message("")
+message("Average treatment effect of levamisole plus fluorouracil compared to no treatment:")  
+round(as.numeric(true.a2[(1:10)/2==3][[1]]["F1"] - true.a0[(1:10)/2==3][[1]]["F1"]),4)
+#+END_SRC   
+
+#+RESULTS[<2021-10-26 11:07:24> 315f367c8c44acc8387e5babd2376acfe8d2f4ad]:
+: Average treatment effect of levamisole compared to no treatment:
+: [1] -0.0215
+: 
+: Average treatment effect of levamisole plus fluorouracil compared to no treatment:
+: [1] -0.1473
 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
 library(xtable)
 tab0 <- rbind(sapply(true.a0, function(x) x["F1"]), 
               sapply(true.a0, function(x) x["F2"])) 
