@@ -16,6 +16,7 @@ library(gridExtra)
 library(survival)
 library(riskRegression)
 library(MASS)
+library(hdnom)
 
 #-------------------------------------------------------------------------------------------#
 ## source code

@@ -13,7 +13,7 @@ fit.colon.fun <- function(formula.1=Surv(time, status==1)~rx+sex+nodes+age+obstr
                                              strsplit(as.character(formula.2)[3], "\\+")[[1]]))))
 
     covars.squared <- unlist(grep("\\.squared", covars))
-
+    
     if (length(covars.squared)>0) {
         for (jj in covars.squared) {
             d[, (covars[jj]):=get(gsub("\\.squared", "", covars[jj]))^2]
