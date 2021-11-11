@@ -13,7 +13,7 @@ regression models or variations over the Poisson-based highly adaptive
 lasso (HAL) estimator. \\
 
 Although the current implementations can be applied to new data
-setting, we emphasize that our implementations remain to be made into
+settings, we emphasize that our implementations remain to be made into
 a more user-friendly software package. Current and future work is
 involved with this.
 
@@ -26,7 +26,6 @@ involved with this.
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#true-values-of-target-parameters-box-1][Computing true values of target parameters]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-real-valued-parameter][Targeting hazard estimators for real-valued parameter]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-multivariate-parameter][Targeting hazard estimators for multivariate parameter]]
- + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#applying-a-cox-super-learner][Applying a Cox super learner]]
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
 
@@ -42,8 +41,13 @@ involved with this.
 =R= script:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results none :exports none  :session *R* :cache yes  
+setwd("~/research/TMLE-from-2020june/survival-baseline/Web-appendix-TMLE-causal-inference-survival-analysis/")
+#+END_SRC
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
-source("./usage/load.R") 
+source("./usage/load.R")  
 #+END_SRC
 
 
@@ -71,7 +75,7 @@ Here we load the =colon= data and create the two datasets above:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
-source("./usage/preprocess.colon.data.R")  
+source("./usage/preprocess.colon.data.R")     
 #+END_SRC    
 
 Number of events in the survival data (=colon.surv=): 
@@ -81,10 +85,10 @@ Number of events in the survival data (=colon.surv=):
 out <- cbind(colon.surv[, .N, by="event"],   
              colon.surv[, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE])
 colnames(out) <- c("event", "N", "max follow-up")
-out   
+out    
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 10:53:24> 7eee5ed3cf7a7dcfa9165d99be6d9864b908f1d8]:
+#+RESULTS[<2021-10-29 13:10:51> 7b09896c6e570ad22ad6291967e9a8bf38ed8e22]:
 :    event   N max follow-up
 : 1:     1 430          2910
 : 2:     0 458          3329
@@ -96,10 +100,11 @@ Number of events in the competing risks data (=colon.cr=):
 out <- cbind(colon.cr[order(event)][, .N, by="event"],   
              colon.cr[order(event)][, max(time), by="event"][, max.follow.up:=V1][, -c("event", "V1"), with=FALSE]) 
 colnames(out) <- c("event", "N", "max follow-up")
-out
+out 
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 10:59:58> 69107f9b4d0c1b098d8836cf6b851c33986fe64d]:
+#+RESULTS[<2021-10-29 13:10:54> 2ca64145298424d8532010337689ae27eb04146b]:
+:  
 :   event   N max follow-up
 : 1:     0 405          3329
 : 2:     1 446          2695
@@ -119,7 +124,7 @@ versions of the =colon= data:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
-source("./usage/synthesize.colon.data.R")     
+source("./usage/synthesize.colon.data.R")       
 #+END_SRC    
 
 To create a simulated version of the survival data, we run code as
@@ -132,13 +137,13 @@ fit.colon <- fit.colon.fun(
     formula.1=Surv(time, event==1)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
     formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
     formula.treat=rx~sex+age+nodes+differ+obstruct+perfor+adhere+extent+surg,
-    d=copy(colon.surv))  
+    d=colon.surv)   
 #-- here we simulate data (fixed seed);  
 set.seed(15)   
-(sim.colon.surv <- synthesize.colon.fun(fit.colon=fit.colon, d=copy(colon.surv), name.treat="rx", event.name="event")) 
+(sim.colon.surv <- synthesize.colon.fun(fit.colon=fit.colon, d=colon.surv, name.treat="rx", event.name="event")) 
 #+END_SRC   
 
-#+RESULTS[<2021-10-26 10:48:28> a2e7a0e328f378c138b26ac6c4b3dc5603e36653]:
+#+RESULTS[<2021-10-29 13:11:00> c7e699d1253b67994c877f80cb84480aaf152f38]:
 #+begin_example
      sex age obstruct perfor adhere nodes differ extent surg rx.num      rx      time event
   1:   0  69        0      0      0    12      2      3    0      3 Lev+5FU  634.0321     1
@@ -160,18 +165,18 @@ as follows:
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
 #-- fit models to data; 
-fit.colon.cr <- fit.colon.fun(     
+fit.colon.cr <- fit.colon.fun(      
     formula.1=Surv(time, event==1)~rx+sex+differ+age+nodes.squared+obstruct+perfor+adhere+extent+surg+rx*sex+rx*perfor+rx*age,
     formula.2=Surv(time, event==2)~rx+sex+nodes+differ+age+obstruct+adhere+extent+surg,
     formula.0=Surv(time, event==0)~rx+sex+nodes+differ+age+obstruct+perfor+adhere+extent+surg,
     formula.treat=rx~sex+age+nodes+differ+obstruct+perfor+adhere+extent+surg,
-    d=copy(colon.cr))  
+    d=colon.cr)  
 #-- here we simulate data (fixed seed); 
 set.seed(31)      
-(sim.colon.cr <- synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event"))
+(sim.colon.cr <- synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event"))
 #+END_SRC   
 
-#+RESULTS[<2021-10-26 10:48:41> da9e677c1c87f49568e8fd420adc172d9d7f5707]:
+#+RESULTS[<2021-10-29 13:11:02> 4060df973350b988c03054cb933ca4d977111eb8]:
 #+begin_example
      sex age obstruct perfor adhere nodes differ extent surg nodes.squared rx.num      rx      time event
   1:   0  55        1      0      0     4      1      3    0            16      2     Lev 2590.1288     0
@@ -189,19 +194,19 @@ set.seed(31)
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
-*** True values of target parameters (Box 1)
+*** True values of target parameters
 
 To compute the approximations to the true values of the target
 parameters for the simulated competing risks data, we run the
 following code:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-true.a0 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event", 
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+true.a0 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
                                                               n=1e6, get.true.value=0, tau=tt*365.25)) 
-true.a1 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event", 
+true.a1 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
                                                               n=1e6, get.true.value=1, tau=tt*365.25))   
-true.a2 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=copy(colon.cr), name.treat="rx", event.name="event", 
+true.a2 <- lapply((1:10)/2, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
                                                               n=1e6, get.true.value=2, tau=tt*365.25))
 #+END_SRC   
 
@@ -335,7 +340,7 @@ fit.tmle.F1.Lev5FU.3yrs <-
                              ),
              treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
              treat.effect="Lev+5FU",   
-             output.km=TRUE, 
+             output.km=TRUE,
              target=1,
              tau=3*365.25) 
 #+END_SRC   
@@ -367,6 +372,143 @@ $tmle$F1
 tmle.est 0.2778811  
 tmle.se  0.02584953 
 #+end_example
+
+(Note that the function call produces a warning from fitting the Cox
+model for the hazard of the censoring distribution because of the
+variable =extent=). \\
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+(true.a0 <- sapply(3, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+                                                        n=1e6, get.true.value=0, tau=tt*365.25)))
+(true.a1 <- sapply(3, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+                                                        n=1e6, get.true.value=1, tau=tt*365.25)))
+(true.a2 <- sapply(3, function(tt) synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event", 
+                                                        n=1e6, get.true.value=2, tau=tt*365.25)))   
+#+END_SRC   
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-iterative-tmle-parameter-axis.pdf" :exports none  :session *R* :width 12 :height 1.5 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")    
+pdat <- rbind(data.table(init=c(fit.tmle.F1.Lev5FU.3yrs$init$F1["init.est",]), 
+                         tmle=unlist(c(fit.tmle.F1.Lev5FU.3yrs$tmle$F1["tmle.est",])),
+                         true=c(true.a2["F1",]), 
+                         parameter=c("Psi[1]^a"), 
+                         treat=2))
+ 
+pdat.melt <- melt(pdat, id.vars=c("treat", "parameter"))
+
+pdat.melt[, min:=min(value)*0.98, by=c("treat", "parameter")]
+pdat.melt[, max:=max(value)*1.02, by=c("treat", "parameter")]
+
+pdat.melt[variable=="true", variable:="true value"]
+pdat.melt[variable=="init", variable:="initial estimate"]
+pdat.melt[variable=="tmle", variable:="TMLE estimate"]
+
+ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) + 
+    theme_void(base_size=25) +  
+    ylim(1.95, 2.05) +  
+    geom_segment(aes(x=min, xend=max, y=treat, yend=treat), arrow=arrow(length=unit(0.3, "cm"))) +   
+    geom_text(aes(x=value, y=treat-0.03, label=round(value, 4)), size=5) + 
+    geom_point(aes(x=value, y=treat), shape=3, size=4) +
+    geom_text(aes(x=value, y=treat+0.03, label=variable), size=6.0) + 
+    scale_shape_manual(values=c(1, 8, 9)) + 
+    labs(shape="") +  
+    theme(legend.position="bottom")   
+#+END_SRC    
+
+#+RESULTS[<2021-10-29 15:55:50> 7c23687c9f3e9ea83845437119f76a6b23ff42e8]:
+[[file:./figures/fig-illustrate-iterative-tmle-parameter-axis.pdf]]
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+init.F1.Lev5FU.3yrs <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE,
+            target=1,
+            output.mat="init", 
+            tau=3*365.25) 
+#+END_SRC    
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+updated.F1.Lev5FU.3yrs <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE,
+            target=1,
+            output.mat="updated",
+            tau=3*365.25) 
+#+END_SRC    
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-tmle-update-colon-cr.pdf" :exports none  :session *R* :width 12 :height 8.5 :cache yes
+i <- 1 
+pdat <- rbind(data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, chaz1*fit.cox1]), 
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, cumsum(dhaz1*fit.cox1)]),
+                         cause=paste0("hat(Lambda)['1,n']", "~'['*'id'*'='*", i, "*']'"), 
+                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))),
+              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, chaz2*fit.cox2]), 
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, cumsum(dhaz2*fit.cox2)]),
+                         cause=paste0("hat(Lambda)['2,n']", "~'['*'id'*'='*", i, "*']'"), 
+                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))),
+              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
+                         ##init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, surv.t]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]), 
+                         ##updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, surv.t]),
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]),
+                         cause=paste0("hat(S)['n']", "~'[population average]'"), 
+                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))),
+              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
+                         ##init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, F1.t]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]), 
+                         ##updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, F1.t]),
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]),
+                         cause=paste0("hat(F)['1,n']", "~'[population average]'"), 
+                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))))
+
+pdat.melt <- melt(pdat, id.vars=c("time", "parameter", "cause")) 
+
+pdat.melt[variable=="init.Lambda", variable:="initial"]
+pdat.melt[variable=="updated.Lambda.a0", variable:="a=0"]
+pdat.melt[variable=="updated.Lambda.a1", variable:="a=1"]
+pdat.melt[variable=="updated.Lambda.a2", variable:="updated"] 
+
+pdat.melt[, cause.factor:=factor(cause, ordered=TRUE, levels=pdat.melt[, unique(cause)])]
+
+ggplot(pdat.melt) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="bottom", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=16),
+          axis.text=element_text(size=12),
+          legend.key.size=unit(3,"line")) + 
+    ylab("") + 
+    xlab("time (days)") +  
+    labs(linetype="") + 
+    facet_wrap(. ~ cause.factor, labeller=label_parsed, scales="free_y") + 
+    geom_line(aes(x=time, y=value, linetype=variable))    
+#+END_SRC    
+
+#+RESULTS[<2021-11-01 09:56:59> f9b22b0f8985450c48269afa2d10ea72e330bd2a]:
+[[file:./figures/fig-illustrate-tmle-update-colon-cr.pdf]]
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -458,40 +600,11 @@ $convergenced.at.step
 [1] 10
 #+end_example
 
-[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
-
-*** Applying a Cox super learner
-
-First we specify the Cox regression models to include in the library
-of the super learner:
-
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
-sl.models <- list(mod1=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                  mod2=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared),
-                  mod2a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared),
-                  mod3=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age),
-                  mod3a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age),
-                  mod4=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex),
-                  mod4a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex), 
-                  mod5=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*perfor),
-                  mod5a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*perfor), 
-                  mod6=list(Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex+rx*perfor),
-                  mod6a=list(Surv(time, event==1)~rx+sex+age+obstruct+perfor+differ+adhere+extent+surg+nodes.squared+rx*age+rx*sex+rx*perfor))
-#+END_SRC  
-
-Then we tell =contmle= to use this library by specifying the argument
-=sl.models= and changing the choice of =fit= for the first list
-element of the =estimation= argument to =sl=. (Note that we further
-specify the argument ~verbose.sl=TRUE~ to see what Cox model was
-picked).
-
-
-#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
-fit.tmle.sl.F1.Lev5FU.3yrs <-  
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+init.F2.Lev5FU.3yrs <- 
     contmle(sim.colon.cr,  
-            estimation=list("relapse"=list(fit="sl",
+            estimation=list("relapse"=list(fit="cox",
                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
                             "death"=list(fit="cox",
                                          model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
@@ -499,44 +612,338 @@ fit.tmle.sl.F1.Lev5FU.3yrs <-
                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
                             ),
             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
-            treat.effect="Lev+5FU",  
-            sl.models=sl.models, verbose.sl=TRUE,
-            target=1,  
-            tau=3*365.25)  
-#+END_SRC  
-
-#+RESULTS[<2021-10-26 13:05:21> 78f089e27eb8cd8738a1b081300ad644b86a1edf]:
-: [1] "model picked for relapse: "
-: Surv(time, event == 1) ~ rx + sex + age + obstruct + perfor + 
-:     differ + adhere + extent + surg + nodes.squared + rx * age + 
-:     rx * sex
-
-Look at the output: 
+            treat.effect="Lev+5FU",   
+            output.km=TRUE,
+            target=2,
+            output.mat="init", 
+            tau=3*365.25) 
+#+END_SRC    
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-fit.tmle.sl.F1.Lev5FU.3yrs
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+updated.F2.Lev5FU.3yrs <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE,
+            target=2,
+            output.mat="updated",
+            tau=3*365.25) 
+#+END_SRC    
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+init.F1.F2.Lev5FU.3yrs <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE, 
+            target=1:2, 
+            output.mat="init",
+            tau=3*365.25) 
+#+END_SRC   
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+updated.F1.F2.Lev5FU.3yrs <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE, 
+            target=1:2, 
+            output.mat="updated",
+            tau=3*365.25) 
 #+END_SRC  
 
-#+RESULTS[<2021-10-26 13:07:31> 0f922d98035f6950e525e34a486d41debf1fe864]:
-#+begin_example
-$init
-$init$F1
-         tau=1095.75
-init.est  0.29067337
-init.se   0.02539756
+#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-iterative-tmle-update-colon-cr-treat2.pdf" :exports none  :session *R* :width 12 :height 8 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
+
+i <- 1
+pdat <- rbind(data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time], init.F2.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, chaz1*fit.cox1],
+                                       init.F2.Lev5FU.3yrs[id==i, chaz1*fit.cox1]), 
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, cumsum(dhaz1*fit.cox1)],
+                                             updated.F2.Lev5FU.3yrs[id==i, cumsum(dhaz1*fit.cox1)]),
+                         cause="hat(Lambda)['1,n']", 
+                         parameter=c(rep("hat(Lambda)['1,n']~'updated'~'for'~Psi[1]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])),
+                                     rep("hat(Lambda)['1,n']~'updated'~'for'~Psi[2]^2*(P)", length(init.F2.Lev5FU.3yrs[id==i, time])))), 
+              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time], init.F2.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, chaz2*fit.cox2],
+                                       init.F2.Lev5FU.3yrs[id==i, chaz2*fit.cox2]),  
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, cumsum(dhaz2*fit.cox2)],
+                                             updated.F2.Lev5FU.3yrs[id==i, cumsum(dhaz2*fit.cox2)]),
+                         cause="hat(Lambda)['2,n']", 
+                         parameter=c(rep("hat(Lambda)['2,n']~'updated'~'for'~Psi[1]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])),
+                                     rep("hat(Lambda)['2,n']~'updated'~'for'~Psi[2]^2*(P)", length(init.F2.Lev5FU.3yrs[id==i, time])))))
+
+pdat[, parameter:=paste0(parameter, "~'('*'id'*'='*", i, "*')'")]
+
+pdat.melt <- melt(pdat, id.vars=c("time", "parameter", "cause"))
+
+pdat.melt[variable=="init.Lambda", variable:="initial"]
+pdat.melt[variable=="updated.Lambda.a0", variable:="a=0"]
+pdat.melt[variable=="updated.Lambda.a1", variable:="a=1"]
+pdat.melt[variable=="updated.Lambda.a2", variable:="updated"]
+
+rev.fun <- function(var) sapply(strsplit(var, ""), function(x) paste0(rev(x), collapse=""))
+
+pdat.melt[, parameter.factor:=factor(parameter, ordered=TRUE, levels=rev.fun(sort(rev.fun(pdat.melt[, unique(parameter)]))))]
+
+ggplot(pdat.melt) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="bottom", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=16),
+          legend.key.size=unit(3,"line"), 
+          plot.title=element_text(hjust=0.5, size=20)) + 
+    ylab("") +  
+    xlab("time (days)") +   
+    labs(linetype="") + 
+    facet_wrap(parameter.factor ~ ., labeller=label_parsed, scales="free") + 
+    geom_line(aes(x=time, y=value, linetype=variable)) + 
+    ggtitle("Iterative TMLE applied for separate targeting:")  
+#+END_SRC    
+
+#+RESULTS[<2021-10-29 16:29:59> da003e78ec5e37d26bd149c2c535436d1a820828]:
+[[file:./figures/fig-illustrate-iterative-tmle-update-colon-cr-treat2.pdf]]
 
 
-$tmle
-$tmle$F1
-         tau=1095.75
-tmle.est 0.2733065  
-tmle.se  0.02535923
-#+end_example
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-one-step-tmle-update-colon-cr-treat2.pdf" :exports none  :session *R* :width 12 :height 3.9 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
+
+i <- 1
+pdat <- rbind(data.table(time=c(init.F1.F2.Lev5FU.3yrs[id==i, time]),  
+                         init.Lambda=c(init.F1.F2.Lev5FU.3yrs[id==i, chaz1*fit.cox1]), 
+                         updated.Lambda.a2=c(updated.F1.F2.Lev5FU.3yrs[id==i, cumsum(dhaz1*fit.cox1)]),
+                         cause="hat(Lambda)['1,n']~'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", 
+                         parameter=c(rep("'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", length(init.F1.F2.Lev5FU.3yrs[id==i, time])))), 
+              data.table(time=c(init.F1.F2.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.F2.Lev5FU.3yrs[id==i, chaz2*fit.cox2]),  
+                         updated.Lambda.a2=c(updated.F1.F2.Lev5FU.3yrs[id==i, cumsum(dhaz2*fit.cox2)]),
+                         cause="hat(Lambda)['2,n']~'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", 
+                         parameter=c(rep("'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", length(init.F1.F2.Lev5FU.3yrs[id==i, time])))))
+
+pdat[, cause:=paste0(cause, "~'('*'id'*'='*", i, "*')'")]
+
+pdat.melt <- melt(pdat, id.vars=c("time", "parameter", "cause"))
+
+pdat.melt[variable=="init.Lambda", variable:="initial"]
+pdat.melt[variable=="updated.Lambda.a0", variable:="a=0"]
+pdat.melt[variable=="updated.Lambda.a1", variable:="a=1"]
+pdat.melt[variable=="updated.Lambda.a2", variable:="updated"]
+
+ggplot(pdat.melt) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="none", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=16),
+          legend.key.size=unit(3,"line"),
+          plot.title=element_text(hjust=0.5, size=20)) + 
+    ylab("") +  
+    xlab("time (days)") +   
+    labs(linetype="") + 
+    facet_wrap(. ~ cause, labeller=label_parsed, scales="free") + 
+    geom_line(aes(x=time, y=value, linetype=variable)) + 
+    ggtitle("One-step TMLE applied for simultaneous targeting:")  
+#+END_SRC    
+
+#+RESULTS[<2021-10-29 16:29:53> 42a7e6a16fb3fb70a5995cf9f614a7119c83350e]:
+[[file:./figures/fig-illustrate-one-step-tmle-update-colon-cr-treat2.pdf]]
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-iterative-tmle-update-colon-cr-treat2-averaged.pdf" :exports none  :session *R* :width 12 :height 8 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
+ 
+i <- 1
+pdat <- rbind(data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time], init.F2.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]],
+                                       init.F2.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]), 
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]],
+                                             updated.F2.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]),
+                         cause="hat(S)['n']", 
+                         parameter=c(rep("hat(S)['n']~'updated'~'for'~Psi[1]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])),
+                                     rep("hat(S)['n']~'updated'~'for'~Psi[2]^2*(P)", length(init.F2.Lev5FU.3yrs[id==i, time])))),
+              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time], init.F2.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]],
+                                       init.F2.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]),  
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]],
+                                             updated.F2.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]),
+                         cause="hat(F)['1,n']", 
+                         parameter=c(rep("hat(F)['1,n']~'updated'~'for'~Psi[1]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])),
+                                     rep("hat(F)['1,n']~'updated'~'for'~Psi[2]^2*(P)", length(init.F2.Lev5FU.3yrs[id==i, time])))), 
+              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time], init.F2.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.Lev5FU.3yrs[, mean(F2.t), by="time"][[2]],
+                                       init.F2.Lev5FU.3yrs[, mean(F2.t), by="time"][[2]]),  
+                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[, mean(F2.t), by="time"][[2]],
+                                             updated.F2.Lev5FU.3yrs[, mean(F2.t), by="time"][[2]]),
+                         cause="hat(F)['2,n']", 
+                         parameter=c(rep("hat(F)['2,n']~'updated'~'for'~Psi[1]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])),
+                                     rep("hat(F)['2,n']~'updated'~'for'~Psi[2]^2*(P)", length(init.F2.Lev5FU.3yrs[id==i, time])))))
+
+#pdat[, parameter:=paste0(parameter, "~'('*'id'*'='*", i, "*')'")]
+
+pdat.melt <- melt(pdat, id.vars=c("time", "parameter", "cause"))
+
+pdat.melt[variable=="init.Lambda", variable:="initial"]
+pdat.melt[variable=="updated.Lambda.a0", variable:="a=0"]
+pdat.melt[variable=="updated.Lambda.a1", variable:="a=1"]
+pdat.melt[variable=="updated.Lambda.a2", variable:="updated"]
+
+rev.fun <- function(var) sapply(strsplit(var, ""), function(x) paste0(rev(x), collapse=""))
+
+pdat.melt[, parameter.factor:=factor(parameter, ordered=TRUE, levels=rev.fun(sort(rev.fun(pdat.melt[, unique(parameter)]))))]
+
+ggplot(pdat.melt) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="bottom", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=16),
+          legend.key.size=unit(3,"line"), 
+          strip.text.x=element_text(size=14),
+          axis.text=element_text(size=12),
+          plot.title=element_text(hjust=0.5, size=20)) + 
+    ylab("") +  
+    xlab("time (days)") +   
+    labs(linetype="") + 
+    facet_wrap(parameter.factor ~ ., labeller=label_parsed, scales="free") + 
+    geom_line(aes(x=time, y=value, linetype=variable)) + 
+    ggtitle("Iterative TMLE applied for separate targeting:")  
+#+END_SRC    
+
+#+RESULTS[<2021-11-01 09:53:25> fdb77c4a22acfd2e1f98bc18876eee3f4035b16a]:
+[[file:./figures/fig-illustrate-iterative-tmle-update-colon-cr-treat2-averaged.pdf]]
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-one-step-tmle-update-colon-cr-treat2-averaged.pdf" :exports none  :session *R* :width 12 :height 3.9 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
+
+i <- 1
+pdat <- rbind(data.table(time=c(init.F1.F2.Lev5FU.3yrs[id==i, time]),  
+                         init.Lambda=c(init.F1.F2.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]), 
+                         updated.Lambda.a2=c(updated.F1.F2.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]),
+                         cause="hat(S)['n']~'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", 
+                         parameter=c(rep("'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", length(init.F1.F2.Lev5FU.3yrs[id==i, time])))),
+              data.table(time=c(init.F1.F2.Lev5FU.3yrs[id==i, time]),  
+                         init.Lambda=c(init.F1.F2.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]), 
+                         updated.Lambda.a2=c(updated.F1.F2.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]),
+                         cause="hat(F)['1,n']~'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", 
+                         parameter=c(rep("'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", length(init.F1.F2.Lev5FU.3yrs[id==i, time])))), 
+              data.table(time=c(init.F1.F2.Lev5FU.3yrs[id==i, time]), 
+                         init.Lambda=c(init.F1.F2.Lev5FU.3yrs[, mean(F2.t), by="time"][[2]]), 
+                         updated.Lambda.a2=c(updated.F1.F2.Lev5FU.3yrs[, mean(F2.t), by="time"][[2]]),
+                         cause="hat(F)['2,n']~'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", 
+                         parameter=c(rep("'updated'~'for'~Psi[1]^2*(P)~'and'~Psi[2]^2*(P)", length(init.F1.F2.Lev5FU.3yrs[id==i, time])))))
+
+#pdat[, cause:=paste0(cause, "~'('*'id'*'='*", i, "*')'")]
+
+pdat.melt <- melt(pdat, id.vars=c("time", "parameter", "cause"))
+
+pdat.melt[variable=="init.Lambda", variable:="initial"]
+pdat.melt[variable=="updated.Lambda.a0", variable:="a=0"]
+pdat.melt[variable=="updated.Lambda.a1", variable:="a=1"]
+pdat.melt[variable=="updated.Lambda.a2", variable:="updated"]
+
+ggplot(pdat.melt) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="none", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=16),
+          legend.key.size=unit(3,"line"),
+          strip.text.x=element_text(size=14),
+          axis.text=element_text(size=12),
+          plot.title=element_text(hjust=0.5, size=20)) + 
+    ylab("") +  
+    xlab("time (days)") +   
+    labs(linetype="") + 
+    facet_wrap(.~cause, labeller=label_parsed, scales="free") + 
+    geom_line(aes(x=time, y=value, linetype=variable)) + 
+    ggtitle("One-step TMLE applied for simultaneous targeting:")  
+#+END_SRC    
+
+#+RESULTS[<2021-11-01 09:40:42> 3b7f132ef5ca3895040234ae8577be0d8b8eaddb]:
+[[file:./figures/fig-illustrate-one-step-tmle-update-colon-cr-treat2-averaged.pdf]]
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-one-step-tmle-parameter-axis.pdf" :exports none  :session *R* :width 12 :height 1.5 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")    
+pdat <- rbind(data.table(init=c(fit.tmle.F1.F2.Lev5FU.3yrs$init$F1["init.est",]), 
+                         tmle=unlist(c(fit.tmle.F1.F2.Lev5FU.3yrs$tmle$F1["tmle.est",])),
+                         true=c(true.a2["F1",]), 
+                         parameter=c("Psi[1]^a"),  
+                         treat=2))
+ 
+pdat.melt <- melt(pdat, id.vars=c("treat", "parameter"))
+
+pdat.melt[, min:=min(value)*0.98, by=c("treat", "parameter")]
+pdat.melt[, max:=max(value)*1.02, by=c("treat", "parameter")]
+
+pdat.melt[variable=="true", variable:="true value"]
+pdat.melt[variable=="init", variable:="initial estimate"]
+pdat.melt[variable=="tmle", variable:="TMLE estimate"]
+
+ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) + 
+    theme_void(base_size=25) +  
+    ylim(1.95, 2.05) +  
+    geom_segment(aes(x=min, xend=max, y=treat, yend=treat), arrow=arrow(length=unit(0.3, "cm"))) +   
+    geom_text(aes(x=value, y=treat-0.03, label=round(value, 4)), size=5) + 
+    geom_point(aes(x=value, y=treat), shape=3, size=4) +
+    geom_text(aes(x=value, y=treat+0.03, label=variable), size=6.0) + 
+    scale_shape_manual(values=c(1, 8, 9)) + 
+    labs(shape="") +  
+    theme(legend.position="bottom")   
+#+END_SRC    
+
+#+RESULTS[<2021-10-29 16:33:40> 698452ae742f2f292dde2f089ac9a7e088de0b06]:
+[[file:./figures/fig-illustrate-one-step-tmle-parameter-axis.pdf]]
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
+
+
 ** Analysis of the =colon= survival data
+
+*** Cox models for Cox super learner 
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none :session *R* :cache yes
+sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
+               "differ", "adhere", "extent", "surg", #"nodes.squared",
+               "rx*age", "rx*sex", "rx*perfor")
+sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
+names(sl.models.grid) <- sl.models
+
+sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
+
+sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
+    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
+        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
+    })), collapse="+"))))})
+
+names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
+#+END_SRC
+
 
 *** Target parameters evaluated at fixed time-point 
 
@@ -544,12 +951,17 @@ tmle.se  0.02535923
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
 fit.colon.surv.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
     contmle(colon.surv, 
-            estimation=list("outcome"=list(fit="cox",
+            estimation=list("outcome"=list(fit="cox.hal.sl",
                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "cens"=list(fit="cox",
+                            "cens"=list(fit="sl",
                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
                             ),
             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
             treat.effect=treat,   
             output.km=TRUE, 
             tau=3*365.25)}) 
@@ -565,13 +977,13 @@ Treatment-specific survival probabilities:
     out.jj <- fit.jj$tmle
     colnames(out.jj) <- names(fit.colon.surv.3yrs)[jj] 
     return(out.jj) 
-})))
+}))) 
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 11:47:14> fc3fa6aa9def1543ddfd1ccfb3a69260a960f9ae]:
-:                 Lev   Lev+5FU       Obs
-: tmle.est 0.36215867 0.2521322 0.3363260
-: tmle.se  0.02708732 0.0252459 0.0258185
+#+RESULTS[<2021-11-11 10:24:29> 954eea7f55e8d0ffb0add4d535dea9351b239433]:
+:                 Lev    Lev+5FU        Obs
+: tmle.est 0.36305673 0.25236697 0.33642019
+: tmle.se  0.02658146 0.02523538 0.02552276
 
 Average treatment effects: 
 
@@ -585,31 +997,115 @@ rbind(est=fit.tmle["tmle.est", "Lev"]-fit.tmle["tmle.est", "Obs"],
 message("")
 message("")
 message("Lev+5FU versus Obs:")
-rbind(est=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"], 
+rbind(est=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"],  
       se=sqrt(fit.tmle["tmle.se", "Lev+5FU"]^2+fit.tmle["tmle.se", "Obs"]^2), 
       ci.lwr=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"]-1.96*sqrt(fit.tmle["tmle.se", "Lev+5FU"]^2+fit.tmle["tmle.se", "Obs"]^2), 
       ci.upr=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"]+1.96*sqrt(fit.tmle["tmle.se", "Lev+5FU"]^2+fit.tmle["tmle.se", "Obs"]^2)) 
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 11:48:09> c7ef265ecb9aa82efec861e2dad9cf6fd50bb6dd]:
+#+RESULTS[<2021-11-11 10:24:56> 89a805b93860fa303754a00fa7a1b3e00513bb0b]:
 #+begin_example
 Lev versus Obs:
  
              [,1]
-est     0.02583270
-se      0.03742082
-ci.lwr -0.04751211
-ci.upr  0.09917751
+est     0.02663654
+se      0.03685085
+ci.lwr -0.04559112
+ci.upr  0.09886420
 
 
 Lev+5FU versus Obs:
  
              [,1]
-est    -0.08419382
-se      0.03611026
-ci.lwr -0.15496992
-ci.upr -0.01341771
+est    -0.08405322
+se      0.03589200
+ci.lwr -0.15440154
+ci.upr -0.01370490
 #+end_example
+
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-survival-fixed.pdf" :exports none  :session *R* :width 12 :height 2.8 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
+
+pdat <- data.table(t(do.call("cbind", lapply(1:length(fit.colon.surv.3yrs), function(jj) {
+    fit.jj <- fit.colon.surv.3yrs[[jj]] 
+    out.jj <- fit.jj$tmle
+    colnames(out.jj) <- names(fit.colon.surv.3yrs)[jj] 
+    return(out.jj) 
+}))))
+
+pdat[, tmle.est:=1-tmle.est] 
+pdat[, which:=names(fit.colon.surv.3yrs)]
+pdat[, ci.lwr:=tmle.est-1.96*tmle.se]
+pdat[, ci.upr:=tmle.est+1.96*tmle.se]
+pdat[, no:=1:.N]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="none", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=22),
+          legend.key.size=unit(3,"line"), 
+          panel.grid.major=element_blank(), 
+          panel.grid.minor=element_blank(), 
+          plot.title=element_text(size=18)) + 
+    ylab("") + 
+    geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_point(aes(x=tmle.est, y=no), size=2) + 
+    scale_y_continuous("", unique(pdat$no), 
+                       limits=c(0.5,3.5),  
+                       labels=unique(pdat$which)) +  
+    xlab("TMLE estimate") + 
+    ggtitle("Treatment-specific survival probabilities")
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 10:28:10> 79906a658d451ee89559d6f2936b3f778c56b37f]:
+[[file:./figures/fig-tmle-results-colon-survival-fixed.pdf]]
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-survival-fixed.pdf" :exports none  :session *R* :width 12 :height 2.5 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
+
+pdat <- data.table(which=c("Lev vs Obs", "Lev+5FU vs Obs"),  
+                   tmle.est=sapply(c("Lev", "Lev+5FU"), function(xx) fit.colon.surv.3yrs[[xx]]$tmle["tmle.est",] -  
+                                                                     fit.colon.surv.3yrs[["Obs"]]$tmle["tmle.est",]), 
+                   tmle.se=sapply(c("Lev", "Lev+5FU"), function(xx) sqrt(fit.colon.surv.3yrs[[xx]]$tmle["tmle.se",]^2 +   
+                                                                         fit.colon.surv.3yrs[["Obs"]]$tmle["tmle.se",]^2)))
+
+pdat[, tmle.est:=-tmle.est]
+pdat[, ci.lwr:=tmle.est-1.96*tmle.se] 
+pdat[, ci.upr:=tmle.est+1.96*tmle.se]
+pdat[, no:=1:.N]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="none", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=22),
+          legend.key.size=unit(3,"line"), 
+          panel.grid.major=element_blank(),  
+          panel.grid.minor=element_blank(), 
+          plot.title=element_text(size=18)) + 
+    ylab("") + 
+    geom_vline(aes(xintercept=0), alpha=0.6, linetype="dotted") +  
+    geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_point(aes(x=tmle.est, y=no), size=2) + 
+    scale_y_continuous("", unique(pdat$no), 
+                       limits=c(0.5,2.5), 
+                       labels=unique(pdat$which)) + 
+    xlab("TMLE estimate") + 
+    ggtitle("Average treatment effects") 
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 10:29:10> 571f6a7908080d752b2c10667246960a81b4827e]:
+[[file:./figures/fig-tmle-results-ate-colon-survival-fixed.pdf]]
+
+
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -620,13 +1116,20 @@ ci.upr -0.01341771
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
 fit.colon.surv.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
     contmle(colon.surv, 
-            estimation=list("outcome"=list(fit="cox",
+            estimation=list("outcome"=list(fit="cox.hal.sl",
                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "cens"=list(fit="cox",
+                            "cens"=list(fit="sl",
                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
                             ),
             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
             treat.effect=treat,   
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            verbose=TRUE,
+            simultaneous.ci=TRUE,
             output.km=TRUE, 
             tau=(1:10)/2*365.25)}) 
 names(fit.colon.surv.10) <- c("Lev", "Lev+5FU", "Obs")
@@ -636,19 +1139,19 @@ Look at the output from the function call:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-fit.colon.surv.10  
+fit.colon.surv.10    
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 11:57:14> 6675324e9e6ef96cbc36177557ef5a54bdf8e649]:
+#+RESULTS[<2021-11-11 13:38:10> b820a814a5c7ec0ca2ec8c7800134f2a53759061]:
 #+begin_example
 $Lev
 $Lev$init
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est  0.02835222 0.08945904  0.15406173 0.23472927  0.29148191  0.33874400   0.38782289 0.41753055   0.43171327
-init.se   0.01077263 0.01750937  0.02101924 0.02455774  0.02594145  0.02710851   0.02751253 0.02784702   0.02790259
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375  tau=1461 tau=1643.625
+init.est  0.02811661 0.09191717  0.15965864 0.24411526  0.30321037  0.35227630   0.40201891 0.4321129   0.44645994
+init.se   0.01096702 0.01752515  0.02084436 0.02416896  0.02546944  0.02659269   0.02700035 0.0274059   0.02748317
          tau=1826.25
-init.est  0.45422687
-init.se   0.02818284
+init.est   0.4691711
+init.se    0.0275061
 
 $Lev$km
        tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
@@ -660,24 +1163,28 @@ km.se   0.02903328
 
 $Lev$tmle
          tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est  0.03307466 0.09805916  0.16124264 0.24559780  0.30402459   0.3594241   0.40453069 0.42612078   0.43580600
-tmle.se   0.01076537 0.01748946  0.02099921 0.02452176  0.02592174   0.0270674   0.02750496 0.02784501   0.02790233
+tmle.est  0.03439786  0.1003093  0.16163656 0.24463774  0.30280373  0.36187131   0.40799872 0.42832787    0.4368885
+tmle.se   0.01094102  0.0174839  0.02082176 0.02414726  0.02544603  0.02654685   0.02696211 0.02738057    0.0274547
          tau=1826.25
-tmle.est  0.45270915
-tmle.se   0.02817468
+tmle.est  0.45133340
+tmle.se   0.02744894
 
 $Lev$convergenced.at.step
-[1] 22
+[1] 33
+
+$Lev$q.max.95
+     95% 
+2.309052 
 
 
 $`Lev+5FU`
 $`Lev+5FU`$init
          tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est  0.02124002 0.06775297  0.11801353 0.18240125  0.22886176  0.26834598   0.31017192 0.33592663   0.34834504
-init.se   0.01084225 0.01669286  0.01940754 0.02277205  0.02454795  0.02529375   0.02660409 0.02752964   0.02796546
+init.est  0.02001412 0.06625443  0.11668424 0.18165640  0.22863572  0.26868020   0.31031764 0.33605310    0.3484747
+init.se   0.01090591 0.01657955  0.01927577 0.02284632  0.02446988  0.02529587   0.02655883 0.02756742    0.0279598
          tau=1826.25
-init.est   0.3682281
-init.se    0.0281170
+init.est  0.36834746
+init.se   0.02813599
 
 $`Lev+5FU`$km
        tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
@@ -688,25 +1195,29 @@ km.est  0.36426047
 km.se   0.02836012
 
 $`Lev+5FU`$tmle
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est  0.03090673 0.08322442  0.12726155 0.19061829  0.23063810  0.25433631   0.28874694 0.32014815   0.34008081
-tmle.se   0.01080327 0.01666590  0.01939296 0.02276702  0.02455554  0.02525886   0.02654892 0.02749183   0.02796285
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375  tau=1461 tau=1643.625
+tmle.est  0.03060517 0.08251773  0.12648676 0.19111992  0.23082586  0.25442681    0.2887010 0.3205578   0.34082942
+tmle.se   0.01084285 0.01654015  0.01924785 0.02283351  0.02446966  0.02524629    0.0264883 0.0275202   0.02795395
          tau=1826.25
-tmle.est   0.3667224
-tmle.se    0.0281270
+tmle.est  0.36742568
+tmle.se   0.02814427
 
 $`Lev+5FU`$convergenced.at.step
-[1] 37
+[1] 39
+
+$`Lev+5FU`$q.max.95
+     95% 
+2.317683 
 
 
 $Obs
 $Obs$init
          tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est 0.030735875 0.09663097  0.16579619 0.25143732  0.31119010  0.36062085   0.41161910 0.44231641   0.45692413
-init.se  0.007170564 0.01499860  0.02002748 0.02297368  0.02470325  0.02586371   0.02680666 0.02727022   0.02735704
+init.est 0.029302193 0.09561799  0.16575611 0.25278814  0.31340014  0.36353875   0.41418847 0.44473980   0.45927980
+init.se  0.006866511 0.01484047  0.01969303 0.02272439  0.02441296  0.02558631   0.02645427 0.02687773   0.02697966
          tau=1826.25
-init.est  0.48004763
-init.se   0.02756949
+init.est  0.48226275
+init.se   0.02720205
 
 $Obs$km
        tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
@@ -717,28 +1228,161 @@ km.est  0.48006894
 km.se   0.02865511
 
 $Obs$tmle
-         tau=182.625 tau=365.25 tau=547.875 tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est 0.016878445 0.07388697  0.15237946 0.2254381  0.28409610  0.33628076   0.39451403 0.43021249   0.44365133
-tmle.se  0.007142577 0.01497606  0.02003331 0.0229260  0.02466255  0.02582577   0.02679395 0.02726544   0.02734601
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+tmle.est  0.01610580 0.07403807  0.15216973 0.22676626  0.28504701  0.33667864   0.39413854 0.42994478   0.44302666
+tmle.se   0.00683859 0.01482758  0.01969732 0.02268265  0.02436701  0.02553621   0.02643239 0.02687148   0.02696469
          tau=1826.25
-tmle.est  0.47194228
-tmle.se   0.02756736
+tmle.est  0.47112545
+tmle.se   0.02720013
 
 $Obs$convergenced.at.step
-[1] 69
+[1] 74
+
+$Obs$q.max.95
+     95% 
+2.345336
 #+end_example
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-survival-one-step.pdf" :exports none  :session *R* :width 12 :height 4.5 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
+
+pdat <- do.call("rbind", lapply(1:length(fit.colon.surv.10), function(jj) {
+    fit.jj <- fit.colon.surv.10[[jj]]
+    out.jj <- t(fit.jj$tmle)
+    return(data.table(out.jj, which=names(fit.colon.surv.10)[jj], 
+                      q.95=fit.jj$q.max.95, 
+                      time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+
+pdat[, tmle.est:=1-tmle.est]
+pdat[, ci.lwr:=tmle.est-q.95*tmle.se] 
+pdat[, ci.upr:=tmle.est+q.95*tmle.se]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +     
+    theme(#legend.position="bottom", 
+        axis.title.y=element_text(angle=90, size=20), 
+        axis.title.x=element_text(size=20),
+        legend.key.size=unit(3,"line"), 
+        panel.grid.major=element_blank(), 
+        panel.grid.minor=element_blank(), 
+        plot.title=element_text(size=18)) + 
+    ylab("TMLE estimate") +
+    labs(linetype="") +  
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
+    #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
+    geom_point(aes(x=time, y=tmle.est), size=1) + 
+    #scale_y_continuous("", unique(pdat$no),  
+    #                   limits=c(0.5,3.5), 
+    #                   labels=unique(pdat$which)) +  
+    xlab("time") +  
+    ggtitle("Treatment-specific survival probabilities")
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 13:40:32> 896d510f07919e9237ef2c10296997541e96787e]:
+[[file:./figures/fig-tmle-results-colon-survival-one-step.pdf]]
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-survival-one-step.pdf" :exports none  :session *R* :width 12 :height 4 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
+
+pdat <- do.call("rbind", lapply(1:length(fit.colon.surv.10), function(jj) {
+    fit.jj <- fit.colon.surv.10[[jj]]
+    out.jj <- t(fit.jj$tmle)
+    return(data.table(out.jj, which=names(fit.colon.surv.10)[jj],
+                      q.95=fit.jj$q.max.95, 
+                      time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+
+pdat[, tmle.est:=-tmle.est]
+
+pdat <- merge(pdat[which!="Obs"], pdat[which=="Obs"], by="time")
+
+pdat[, q.95:=q.95.y] 
+pdat[q.95.y<=q.95.x, q.95:=q.95.x] 
+
+pdat[, tmle.est:=tmle.est.x-tmle.est.y]
+pdat[, tmle.se:=sqrt(tmle.se.x^2+tmle.se.y^2)]
+pdat[, ci.lwr:=tmle.est-q.95*tmle.se]
+pdat[, ci.upr:=tmle.est+q.95*tmle.se]
+pdat[, which:=which.x]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +      
+    theme(#legend.position="bottom", 
+        axis.title.y=element_text(angle=90, size=20), 
+        axis.title.x=element_text(size=20),
+        legend.key.size=unit(3,"line"), 
+        panel.grid.major=element_blank(), 
+        panel.grid.minor=element_blank(), 
+        plot.title=element_text(size=18)) + 
+    ylab("TMLE estimate") +
+    labs(linetype="") +  
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
+    #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
+    geom_point(aes(x=time, y=tmle.est), size=1) + 
+    geom_hline(aes(yintercept=0), alpha=0.6, linetype="dotted") +  
+    xlab("TMLE estimate") +  
+    ggtitle("Average treatment effects")
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 13:44:50> 482a08027737def35b31c47477b9f95da3e50f64]:
+[[file:./figures/fig-tmle-results-ate-colon-survival-one-step.pdf]]
+
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 ** Analysis of the =colon= competing risks data
 
-*** Target parameters evaluated at fixed time-point
+
+*** Cox models for Cox super learner 
+
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
-fit.contmle.F1.F2.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
-    contmle(colon.cr, 
-            estimation=list("relapse"=list(fit="cox",
+#+BEGIN_SRC R :exports code :results none :session *R* :cache yes
+sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
+               "differ", "adhere", "extent", "surg", #"nodes.squared",
+               "rx*age", "rx*sex", "rx*perfor")
+sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
+names(sl.models.grid) <- sl.models
+
+sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
+
+sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
+    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
+        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
+    })), collapse="+"))))})
+
+names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
+#+END_SRC
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none :session *R* :cache yes
+sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
+               "differ", "adhere", "extent", "surg", #"nodes.squared",
+               "rx*age", "rx*sex", "rx*perfor")
+sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
+names(sl.models.grid) <- sl.models
+
+sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
+
+sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
+    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
+        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
+    })), collapse="+"))))})
+
+names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
+
+cox.hal.sl.F1.Lev5FU.3yrs <-  
+    contmle(colon.cr,  
+            estimation=list("relapse"=list(fit="cox.hal.sl",
                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
                             "death"=list(fit="cox",
                                          model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
@@ -746,9 +1390,200 @@ fit.contmle.F1.F2.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) 
                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
                             ),
             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",  
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            output.tune.grid=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            V=10,
+            target=1,  
+            tau=3*365.25)
+#+END_SRC
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-colon-cr-initial-estimation2.pdf" :exports none  :session *R* :width 16 :height 8 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")          
+ 
+tune.grid <- copy(cox.hal.sl.F1.Lev5FU.3yrs)   
+
+tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes:=0]
+tune.grid[which=="cox", differ:=unlist(lapply(sl.models, function(x) "differ"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", differ:=0]
+tune.grid[which=="cox", extent:=unlist(lapply(sl.models, function(x) "extent"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", extent:=0]
+tune.grid[which!="cox", table(extent, nodes)]
+#tune.grid[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+#tune.grid[which!="cox", nodes.squared:=0]
+setorder(tune.grid, which, nodes, differ)
+tune.grid[, xnum:=as.numeric(1:.N), by=which] 
+max.xnum.hal <- tune.grid[which=="hal", max(xnum)]
+tune.grid[which=="cox", xnum:=xnum/20+max.xnum.hal+2]
+tune.grid[which=="cox" & !nodes & differ, xnum:=xnum+1]
+tune.grid[which=="cox" & nodes, xnum:=xnum+3]
+tune.grid[which=="cox" & nodes & differ, xnum:=xnum+1]
+tune.grid[, pos.text:=mean(xnum), by=c("which", "cut.two.way", "nodes")]
+tune.grid[, pos.text2:=mean(xnum), by=c("which", "cut.two.way", "nodes", "differ")]
+tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
+#lapply(sl.models, function(x) gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]]))
+tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
+tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
+tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("nodes included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
+tune.grid[which=="cox" & differ, lab.text2:=paste0("differ \n included")]
+tune.grid[which=="cox" & !differ, lab.text2:=paste0("differ \n excluded")]
+tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, N2:=.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, max.cve:=max(cve)]
+tune.grid[, min.cve:=min(cve), by=c("which", "nodes")]
+tune.grid[!nodes & differ, min.cve:=min.cve-4]
+tune.grid[!nodes & !differ, pos.text2:=pos.text2+0.15]
+min.pos.text <- tune.grid[which=="hal", min(pos.text)]
+ggplot(tune.grid) +
+    theme_bw(base_size=25) +
+    geom_point(data=tune.grid[which=="cox"],
+               aes(x=xnum, y=cve, col=differ, shape=extent), size=3) +
+    scale_shape_manual("", values=c(1, 2), labels=c("extent excluded",
+                                                    "extent included")) +
+    geom_point(data=tune.grid[which=="hal"],
+               aes(x=xnum, y=cve), size=3) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=pos.text-0.5, y=max.cve+3, label=lab.text)) +
+    geom_label(data=tune.grid[idN2==1 & which=="cox"],
+               aes(x=pos.text2, y=min.cve-3, label=lab.text2)) +
+    geom_label(data=tune.grid[idN==1 & which=="hal"],
+               aes(x=pos.text, y=max.cve+3, label=lab.text)) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=pos.text+min.pos.text-0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N],
+               aes(xintercept=xnum+1),
+               linetype="dashed", alpha=0.4) +
+    scale_color_manual(values=c("gray13", "gray56"), guide="none") + 
+    xlab("cut.one.way") + ylab("CVE") + 
+    theme(axis.title.x=element_text(size=16, hjust=0.3),
+          axis.text=element_text(size=12),
+          legend.position=c(.875,.535),
+          legend.text=element_text(size=12), 
+          legend.background=element_rect(fill='transparent')) + 
+    scale_x_continuous(breaks=tune.grid[which=="hal"]$xnum, 
+                       labels=tune.grid[which=="hal"]$cut.one.way) 
+
+#+END_SRC    
+
+#+RESULTS[<2021-11-10 09:20:52> 181d628dc3ef57bd5b19c3909540e36a8c2abb75]:
+[[file:./figures/fig-colon-cr-initial-estimation2.pdf]]
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-colon-cr-initial-estimation.pdf" :exports none  :session *R* :width 16 :height 8 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")          
+
+tune.grid <- copy(cox.hal.sl.F1.Lev5FU.3yrs)  
+
+tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes:=0]
+tune.grid[which=="cox", perfor:=unlist(lapply(sl.models, function(x) "perfor"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", perfor:=0]
+tune.grid[which=="cox", rx.perfor:=unlist(lapply(sl.models, function(x) "rx*perfor"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", rx.perfor:=0]
+tune.grid[which!="cox", table(rx.perfor, nodes)]
+#tune.grid[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+#tune.grid[which!="cox", nodes.squared:=0]
+setorder(tune.grid, which, nodes, perfor)
+tune.grid[, xnum:=as.numeric(1:.N), by=which] 
+max.xnum.hal <- tune.grid[which=="hal", max(xnum)]
+tune.grid[which=="cox", xnum:=xnum/20+max.xnum.hal+2]
+tune.grid[which=="cox" & !nodes & perfor, xnum:=xnum+1]
+tune.grid[which=="cox" & nodes, xnum:=xnum+3]
+tune.grid[which=="cox" & nodes & perfor, xnum:=xnum+1]
+tune.grid[, pos.text:=mean(xnum), by=c("which", "cut.two.way", "nodes")]
+tune.grid[, pos.text2:=mean(xnum), by=c("which", "cut.two.way", "nodes", "perfor")]
+tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
+#lapply(sl.models, function(x) gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]]))
+tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
+tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
+tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("nodes included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
+tune.grid[which=="cox" & perfor, lab.text2:=paste0("perfor \n included")]
+tune.grid[which=="cox" & !perfor, lab.text2:=paste0("perfor \n excluded")]
+tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "perfor")]
+tune.grid[, N2:=.N, by=c("cut.two.way", "nodes", "perfor")]
+tune.grid[, max.cve:=max(cve)]
+tune.grid[, min.cve:=min(cve), by=c("which", "nodes")]
+tune.grid[!nodes & perfor, min.cve:=min.cve-4]
+tune.grid[!nodes & !perfor, pos.text2:=pos.text2+0.15]
+min.pos.text <- tune.grid[which=="hal", min(pos.text)]
+ggplot(tune.grid) +
+    theme_bw(base_size=25) +
+    geom_point(data=tune.grid[which=="cox"],
+               aes(x=xnum, y=cve, col=perfor, shape=rx.perfor), size=3) +
+    scale_shape_manual("", values=c(1, 2), labels=c("rx*perfor excluded",
+                                                    "rx*perfor included")) +
+    geom_point(data=tune.grid[which=="hal"],
+               aes(x=xnum, y=cve), size=3) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=pos.text-0.5, y=max.cve+3, label=lab.text)) +
+    geom_label(data=tune.grid[idN2==1 & which=="cox"],
+               aes(x=pos.text2, y=min.cve-3, label=lab.text2)) +
+    geom_label(data=tune.grid[idN==1 & which=="hal"],
+               aes(x=pos.text, y=max.cve+3, label=lab.text)) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=pos.text+min.pos.text-0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N],
+               aes(xintercept=xnum+1),
+               linetype="dashed", alpha=0.4) +
+    scale_color_manual(values=c("gray13", "gray56"), guide="none") + 
+    xlab("cut.one.way") + ylab("CVE") + 
+    theme(axis.title.x=element_text(size=16, hjust=0.3),
+          axis.text=element_text(size=12),
+          legend.position=c(.875,.535),
+          legend.text=element_text(size=12), 
+          legend.background=element_rect(fill='transparent')) + 
+    scale_x_continuous(breaks=tune.grid[which=="hal"]$xnum, 
+                       labels=tune.grid[which=="hal"]$cut.one.way) 
+
+#+END_SRC    
+
+#+RESULTS[<2021-11-04 11:57:18> 96256ec7dc2b9c54d732fb70adb6733726f34b63]:
+[[file:./figures/fig-colon-cr-initial-estimation.pdf]]
+
+
+
+*** Target parameters evaluated at fixed time-point
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.contmle.F1.F2.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.cr, 
+            estimation=list("relapse"=list(fit="cox.hal.sl",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox.hal.sl",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="sl",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
             treat.effect=treat,  
-            sl.models=NULL, 
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
             output.km=TRUE, 
+            simultaneous.ci=TRUE,
             target=1:2, 
             tau=3*365.25)}) 
 names(fit.contmle.F1.F2.3yrs) <- c("Lev", "Lev+5FU", "Obs")
@@ -758,27 +1593,27 @@ Look at the output from the function call:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-fit.contmle.F1.F2.3yrs
+fit.contmle.F1.F2.3yrs 
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 12:35:08> 21558932507c4cfd5f4acc5ca83906bb9e8d82e7]:
+#+RESULTS[<2021-11-11 13:01:58> a0cd6e944ef2da2dd5d71c2a60f3f44ff46fae4c]:
 #+begin_example
 $Lev
 $Lev$init
 $Lev$init$F1
          tau=1095.75
-init.est  0.47162155
-init.se   0.02953647
+init.est  0.48926006
+init.se   0.02836712
 
 $Lev$init$F2
          tau=1095.75
-init.est 0.016863909
-init.se  0.007633557
+init.est 0.015357277
+init.se  0.007613289
 
 $Lev$init$S
          tau=1095.75
-init.est   0.5115145
-init.se    0.0295077
+init.est  0.49538266
+init.se   0.02843236
 
 
 $Lev$km
@@ -796,40 +1631,44 @@ km.se  0.008246143
 $Lev$tmle
 $Lev$tmle$F1
          tau=1095.75
-tmle.est   0.4811181
-tmle.se    0.0294812
+tmle.est  0.47748809
+tmle.se   0.02835463
 
 $Lev$tmle$F2
          tau=1095.75
-tmle.est 0.017050344
-tmle.se  0.007632803
+tmle.est 0.017613508
+tmle.se  0.007595705
 
 $Lev$tmle$S
          tau=1095.75
-tmle.est  0.50183159
-tmle.se   0.02945199
+tmle.est  0.50489840
+tmle.se   0.02843068
 
 
 $Lev$convergenced.at.step
-[1] 9
+[1] 14
+
+$Lev$q.max.95
+    95% 
+1.96621 
 
 
 $`Lev+5FU`
 $`Lev+5FU`$init
 $`Lev+5FU`$init$F1
          tau=1095.75
-init.est  0.34077206
-init.se   0.02741342
+init.est  0.33816943
+init.se   0.02751093
 
 $`Lev+5FU`$init$F2
          tau=1095.75
-init.est 0.025918531
-init.se  0.008911165
+init.est 0.025097429
+init.se  0.008617509
 
 $`Lev+5FU`$init$S
          tau=1095.75
-init.est  0.63330941
-init.se   0.02797136
+init.est  0.63673314
+init.se   0.02796726
 
 
 $`Lev+5FU`$km
@@ -847,40 +1686,44 @@ km.se  0.009043297
 $`Lev+5FU`$tmle
 $`Lev+5FU`$tmle$F1
          tau=1095.75
-tmle.est  0.33303482
-tmle.se   0.02740082
+tmle.est   0.3352188
+tmle.se    0.0275060
 
 $`Lev+5FU`$tmle$F2
          tau=1095.75
-tmle.est 0.026138385
-tmle.se  0.008912386
+tmle.est 0.023659105
+tmle.se  0.008619622
 
 $`Lev+5FU`$tmle$S
          tau=1095.75
-tmle.est  0.64082680
-tmle.se   0.02795636
+tmle.est  0.64112211
+tmle.se   0.02796174
 
 
 $`Lev+5FU`$convergenced.at.step
-[1] 4
+[1] 8
+
+$`Lev+5FU`$q.max.95
+     95% 
+1.964605 
 
 
 $Obs
 $Obs$init
 $Obs$init$F1
          tau=1095.75
-init.est  0.49148573
-init.se   0.02778776
+init.est  0.49721013
+init.se   0.02758601
 
 $Obs$init$F2
          tau=1095.75
-init.est 0.022792274
-init.se  0.006850221
+init.est  0.02406588
+init.se   0.00713911
 
 $Obs$init$S
          tau=1095.75
-init.est  0.48572199
-init.se   0.02772329
+init.est  0.47872399
+init.se   0.02757703
 
 
 $Obs$km
@@ -898,23 +1741,127 @@ km.se  0.007983817
 $Obs$tmle
 $Obs$tmle$F1
          tau=1095.75
-tmle.est  0.48233846
-tmle.se   0.02778264
+tmle.est  0.48104591
+tmle.se   0.02755615
 
 $Obs$tmle$F2
          tau=1095.75
-tmle.est 0.018102716
-tmle.se  0.006833954
+tmle.est 0.020286726
+tmle.se  0.007138789
 
 $Obs$tmle$S
          tau=1095.75
-tmle.est  0.49955882
-tmle.se   0.02770872
+tmle.est  0.49866736
+tmle.se   0.02752291
 
 
 $Obs$convergenced.at.step
-[1] 17
+[1] 12
+
+$Obs$q.max.95
+     95% 
+1.967607
 #+end_example
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-competing-risks-fixed.pdf" :exports none  :session *R* :width 12 :height 3.3 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")       
+
+pdat <- data.table(do.call("rbind", lapply(1:length(fit.contmle.F1.F2.3yrs), function(jj) {
+    fit.jj <- fit.contmle.F1.F2.3yrs[[jj]]
+    out.jj <- do.call("cbind", fit.jj$tmle)
+    colnames(out.jj) <- names(fit.jj$tmle) 
+    return(data.table(t(out.jj), parameter=colnames(out.jj),
+                      q.95=fit.jj$q.max.95, which=names(fit.contmle.F1.F2.3yrs)[jj])) 
+})))
+
+pdat[parameter=="F1", parameter:="F[1]"] 
+pdat[parameter=="F2", parameter:="F[2]"]
+
+pdat[, ci.lwr:=tmle.est-q.95*tmle.se]
+pdat[, ci.upr:=tmle.est+q.95*tmle.se]
+pdat[, no:=as.numeric(factor(which, levels=unique(which)))]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="none", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=22),
+          axis.text.x=element_text(size=12),
+          legend.key.size=unit(3,"line"), 
+          panel.grid.major=element_blank(), 
+          panel.grid.minor=element_blank(), 
+          plot.title=element_text(size=18)) + 
+    ylab("") + 
+    geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_point(aes(x=tmle.est, y=no), size=2) + 
+    scale_y_continuous("", unique(pdat$no), 
+                       limits=c(0.5,3.5),  
+                       labels=unique(pdat$which)) +   
+    facet_grid(. ~ parameter, scales="free", labeller=label_parsed) + 
+    xlab("TMLE estimate") +  
+    ggtitle("Treatment-specific absolute risk probabilities")
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 13:46:25> 05a167e6b3d8825232b5bec8b5ba3ce349c9cdad]:
+[[file:./figures/fig-tmle-results-colon-competing-risks-fixed.pdf]]
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-competing-risks-fixed.pdf" :exports none  :session *R* :width 12 :height 3.0 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")     
+
+pdat <- data.table(do.call("rbind", lapply(1:length(fit.contmle.F1.F2.3yrs), function(jj) {
+    fit.jj <- fit.contmle.F1.F2.3yrs[[jj]] 
+    out.jj <- do.call("cbind", fit.jj$tmle)
+    colnames(out.jj) <- names(fit.jj$tmle)
+    return(data.table(t(out.jj), parameter=colnames(out.jj), 
+                      q.95=fit.jj$q.max.95, which=names(fit.contmle.F1.F2.3yrs)[jj])) 
+})))
+
+pdat[parameter=="F1", parameter:="F[1]"]
+pdat[parameter=="F2", parameter:="F[2]"]
+
+pdat <- merge(pdat[which!="Obs"], pdat[which=="Obs"], by="parameter")
+
+pdat[, q.95:=q.95.y] 
+pdat[q.95.y<=q.95.x, q.95:=q.95.x] 
+
+pdat[, tmle.est:=tmle.est.x-tmle.est.y]
+pdat[, tmle.se:=sqrt(tmle.se.x^2+tmle.se.y^2)]
+pdat[, ci.lwr:=tmle.est-1.96*tmle.se]
+pdat[, ci.upr:=tmle.est+1.96*tmle.se]
+pdat[, which:=which.x]
+pdat[, no:=as.numeric(factor(which, levels=unique(which)))]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +     
+    theme(legend.position="none", 
+          axis.title.y=element_text(angle=0), 
+          axis.title.x=element_text(size=22),
+          axis.text.x=element_text(size=12),
+          legend.key.size=unit(3,"line"), 
+          panel.grid.major=element_blank(),  
+          panel.grid.minor=element_blank(), 
+          plot.title=element_text(size=18)) + 
+    ylab("") + 
+    geom_vline(aes(xintercept=0), alpha=0.6, linetype="dotted") +  
+    geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_point(aes(x=tmle.est, y=no), size=2) + 
+    scale_y_continuous("", unique(pdat$no), 
+                       limits=c(0.5,2.5), 
+                       labels=unique(pdat$which)) + 
+    facet_grid(. ~ parameter, scales="free", labeller=label_parsed) + 
+    xlab("TMLE estimate") + 
+    ggtitle("Average treatment effects") 
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 13:47:07> 82f4af399fc26f6f7d4009677f618e49ea776416]:
+[[file:./figures/fig-tmle-results-ate-colon-competing-risks-fixed.pdf]]
+
+
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -924,16 +1871,20 @@ $Obs$convergenced.at.step
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
 fit.contmle.F1.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
     contmle(colon.cr, 
-            estimation=list("relapse"=list(fit="cox",
+            estimation=list("relapse"=list(fit="cox.hal.sl",
                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "death"=list(fit="cox",
+                            "death"=list(fit="cox.hal.sl",
                                          model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "cens"=list(fit="cox",
+                            "cens"=list(fit="cox.sl",
                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
                             ),
             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
             treat.effect=treat,  
-            sl.models=NULL, 
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE,
             simultaneous.ci=TRUE,
             output.km=TRUE, 
             target=1, 
@@ -945,8 +1896,197 @@ Look at the output from the function call:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-fit.contmle.F1.10
+fit.contmle.F1.5  
 #+END_SRC    
+
+#+RESULTS[<2021-11-11 14:32:02> 4b312f94d430f77f5261576ad88cb7e2af24825d]:
+#+begin_example
+$Lev
+$Lev$init
+$Lev$init$F1
+         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+init.est 0.26540994 0.43127963  0.48926006 0.51722828   0.5415107
+init.se  0.02547524 0.02776233  0.02836688 0.02845304   0.0285176
+
+
+$Lev$km
+$Lev$km$F1
+       tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+km.est 0.27210884 0.42517007  0.47619048 0.49659864   0.5239808
+km.se  0.02595559 0.02883217  0.02912751 0.02915992   0.0291366
+
+
+$Lev$tmle
+$Lev$tmle$F1
+         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+tmle.est 0.27325444 0.42453449  0.47614571 0.50136733  0.52542050
+tmle.se  0.02542902 0.02773675  0.02835088 0.02842368  0.02849808
+
+
+$Lev$convergenced.at.step
+[1] 12
+
+$Lev$q.max.95
+     95% 
+2.078667 
+
+
+$`Lev+5FU`
+$`Lev+5FU`$init
+$`Lev+5FU`$init$F1
+         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+init.est 0.17091586 0.29230580  0.33816943 0.36103308  0.38130539
+init.se  0.02049811 0.02622656  0.02751099 0.02783808  0.02809854
+
+
+$`Lev+5FU`$km
+$`Lev+5FU`$km$F1
+       tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+km.est 0.14878893 0.29065744  0.33564014 0.35642071  0.37753519
+km.se  0.02093413 0.02670975  0.02777728 0.02817422  0.02853805
+
+
+$`Lev+5FU`$tmle
+$`Lev+5FU`$tmle$F1
+         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+tmle.est  0.1506807 0.28525483  0.33312205 0.35596125  0.37662495
+tmle.se   0.0204618 0.02622536  0.02750932 0.02783388  0.02809857
+
+
+$`Lev+5FU`$convergenced.at.step
+[1] 16
+
+$`Lev+5FU`$q.max.95
+     95% 
+2.088366 
+
+
+$Obs
+$Obs$init
+$Obs$init$F1
+         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+init.est 0.27176466 0.43930424   0.4972101 0.52496637  0.54895145
+init.se  0.02438973 0.02707843   0.0275867 0.02771404  0.02777321
+
+
+$Obs$km
+$Obs$km$F1
+       tau=365.25 tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+km.est 0.27868852 0.4267277  0.48932819 0.52557056  0.54533912
+km.se  0.02567267 0.0283454  0.02865829 0.02863202  0.02855372
+
+
+$Obs$tmle
+$Obs$tmle$F1
+         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
+tmle.est 0.26890892 0.42035850  0.48189991 0.51341987   0.5377257
+tmle.se  0.02437967 0.02703362  0.02755922 0.02770303   0.0277560
+
+
+$Obs$convergenced.at.step
+[1] 17
+
+$Obs$q.max.95
+     95% 
+2.089699
+#+end_example
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-competing-risks-F1-10.pdf" :exports none  :session *R* :width 12 :height 4.5 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
+
+pdat <- do.call("rbind", lapply(1:length(fit.contmle.F1.5), function(jj) {
+    fit.jj <- fit.contmle.F1.5[[jj]]
+    out.jj <- t(fit.jj$tmle$F1)
+    return(data.table(out.jj, which=names(fit.contmle.F1.5)[jj], 
+                      q.95=fit.jj$q.max.95, 
+                      time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+
+pdat <- merge(pdat, data.table(q.max.95=unlist(lapply(fit.contmle.F1.5, function(x) x$q.max.95)), 
+                               which=names(fit.contmle.F1.5)), by="which")
+
+pdat[, tmle.est:=1-tmle.est]
+pdat[, ci.lwr:=tmle.est-q.95*tmle.se] 
+pdat[, ci.upr:=tmle.est+q.95*tmle.se]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +     
+    theme(#legend.position="bottom", 
+        axis.title.y=element_text(angle=90, size=20), 
+        axis.title.x=element_text(size=20),
+        legend.key.size=unit(3,"line"), 
+        panel.grid.major=element_blank(), 
+        panel.grid.minor=element_blank(), 
+        plot.title=element_text(size=18)) + 
+    ylab("TMLE estimate") +
+    labs(linetype="") +  
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
+    #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
+    geom_point(aes(x=time, y=tmle.est), size=1) + 
+    #scale_y_continuous("", unique(pdat$no),   
+    #                   limits=c(0.5,3.5), 
+    #                   labels=unique(pdat$which)) +   
+    xlab("time") +  
+    ggtitle("Treatment-specific absolute risk of cancer relapse")
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 14:35:11> 4b14e474e82e9b075fa7604f85db0ee9f07b670c]:
+[[file:./figures/fig-tmle-results-colon-competing-risks-F1-10.pdf]]
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-competing-risks-F1-10.pdf" :exports none  :session *R* :width 12 :height 4 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
+
+pdat <- do.call("rbind", lapply(1:length(fit.contmle.F1.5), function(jj) {
+    fit.jj <- fit.contmle.F1.5[[jj]]
+    out.jj <- t(fit.jj$tmle$F1)
+    return(data.table(out.jj, which=names(fit.contmle.F1.5)[jj], 
+                      q.95=fit.jj$q.max.95, time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+
+pdat[, tmle.est:=-tmle.est]
+
+pdat <- merge(pdat[which!="Obs"], pdat[which=="Obs"], by="time")
+pdat[, q.95:=q.95.y] 
+pdat[q.95.y<=q.95.x, q.95:=q.95.x] 
+
+pdat[, tmle.est:=tmle.est.x-tmle.est.y]
+pdat[, tmle.se:=sqrt(tmle.se.x^2+tmle.se.y^2)]
+pdat[, which:=which.x]
+
+pdat <- merge(pdat, data.table(q.max.95=unlist(lapply(fit.contmle.F1.5, function(x) x$q.max.95)), 
+                               which=names(fit.contmle.F1.5)), by="which")
+
+pdat[, ci.lwr:=tmle.est-q.95*tmle.se]
+pdat[, ci.upr:=tmle.est+q.95*tmle.se]
+
+ggplot(pdat) + 
+    theme_bw(base_size=25) +      
+    theme(#legend.position="bottom", 
+        axis.title.y=element_text(angle=90, size=20), 
+        axis.title.x=element_text(size=20),
+        legend.key.size=unit(3,"line"), 
+        panel.grid.major=element_blank(), 
+        panel.grid.minor=element_blank(), 
+        plot.title=element_text(size=18)) + 
+    ylab("TMLE estimate") +
+    labs(linetype="") +  
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
+    #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
+    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
+    geom_point(aes(x=time, y=tmle.est), size=1) + 
+    geom_hline(aes(yintercept=0), alpha=0.6, linetype="dotted") +  
+    xlab("TMLE estimate") +  
+    ggtitle("Average treatment effects")
+#+END_SRC    
+
+#+RESULTS[<2021-11-11 14:35:07> 910e3bc5d90ca63ed504607effb257ab0d4fb713]:
+[[file:./figures/fig-tmle-results-ate-colon-competing-risks-F1-10.pdf]]
+
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -982,7 +2122,7 @@ nickname       Bunny-Wunnies Freak Out
 and the following package versions:
 
 #+BEGIN_SRC R  :results output raw drawer  :exports results  :session *R* :cache yes  
-pp <- c("data.table", "zoo", "glmnet", "stringr", "nleqslv", "prodlim", "ggplot2", "gridExtra", "survival", "riskRegression", "MASS")
+pp <- c("data.table", "zoo", "glmnet", "stringr", "nleqslv", "prodlim", "ggplot2", "gridExtra", "survival", "riskRegression", "MASS", "hdnom")
 Publish::org(data.table(Package=pp,Version=sapply(pp,function(x) as.character(packageVersion(x))))) 
 #+END_SRC
 
