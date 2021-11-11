@@ -68,6 +68,7 @@ basis.fun <- function(covars, cut.one.way, dt, treatment=NULL,
     } else {
         pseudo.dt <- copy(dt)
     }
+    
     X <- Matrix(
         model.matrix(formula(paste0(
             Y, "~-1",

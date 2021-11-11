@@ -12,8 +12,10 @@ contmle <- function(dt,
                                     ),
                     #-- when there are competing risks, what is the target?
                     target=1, # if =0, only survival is targeted
-                    #-- use poisson-based or cox-based hal?
-                    hal.screening=FALSE, 
+                    #-- use screening for hal?
+                    hal.screening=FALSE,
+                    #-- HAL super learning (HAL tuning): 
+                    hal.sl=FALSE, 
                     #-- use iterative or one-step tmle; (for competing risks, one-step is default)
                     one.step=FALSE, deps.size=0.1, no.small.steps=200,
                     push.criterion=FALSE,
@@ -54,16 +56,19 @@ contmle <- function(dt,
                     #-- penalize time indicators in hal? 
                     penalize.time=FALSE,
                     #-- pick grid for indicators in hal;
-                    cut.covars=8, cut.time=10,
+                    cut.one.way=8, cut.time=10,
                     cut.time.A=10,
                     cut.L.A=8, cut.two.way=5,
+                    #-- initial grid to consider for cox.hal.sl:
+                    cut.one.way.grid=ceiling(seq(5, 25, length=6)),
+                    cut.two.way.grid=ceiling(seq(0, 15, length=4)),
                     #-- maximum number of iterations in iterative tmle; 
                     maxIter=10,
-                    verbose=FALSE, verbose.sl=FALSE, check.sup=FALSE,
+                    verbose=FALSE, verbose.sl=FALSE, verbose.hal=FALSE, check.sup=FALSE,
                     #-- for comparison; output kaplan-meier and hr; 
                     output.km=FALSE, only.km=FALSE, only.cox.sl=FALSE, output.RR=FALSE,
                     #-- dont use;
-                    output.mat=FALSE, save.sl.pick=FALSE, 
+                    output.mat=FALSE, save.sl.pick=FALSE, output.tune.grid=FALSE, 
                     #-- models incorporated in super learner;
                     sl.change.points=0,#(0:12)/10, 
                     sl.models=NULL
@@ -77,7 +82,10 @@ contmle <- function(dt,
 
     dt[, id:=1:.N]
 
-    if (verbose) verbose.sl <- TRUE
+    if (verbose) {
+        verbose.sl <- TRUE
+        verbose.hal <- TRUE
+    }
    
     not.fit.list <- list()
 
@@ -266,12 +274,15 @@ contmle <- function(dt,
            
             if (verbose) print(paste0("use sl for ", fit.name))
 
-            set.seed(1)
+            set.seed(ceiling(sum(as.numeric(dt[[A.name]])))*2)
+            
             sl.pick <- suppressWarnings(
                 cox.sl(loss.fun=cox.loss.fun, dt=dt, delta.var=delta.var,
                        treatment=A.name, V=V, delta.value=fit.delta,
                        cox.models=sl.models, change.points=sl.change.points))
 
+            estimation[[each]]$sl.cve <- unlist(sl.pick$cox.cve.all)
+            
             if (save.sl.pick) return(sl.pick)
             
             cve.sl.pick <- sl.pick$picked.cox.model$cve
@@ -555,13 +566,21 @@ contmle <- function(dt,
 
     if (any(any.hal)) {
 
-        set.seed(13444)
+        set.seed(ceiling(sum(as.numeric(dt[[A.name]]))))
 
         count.hals <- 1
 
         mat <- merge(mat, dt[, c("id", c(covars[!covars%in%names(mat)])), with=FALSE], by="id")
 
         mat[, (covars):=lapply(.SD, function(x) {
+            if (is.character(x)) {
+                return(as.numeric(as.factor(x)))
+            } else if (is.factor(x)) {
+                return(as.numeric(x))
+            } else return(x)
+        }), .SDcols=covars]
+
+        dt[, (covars):=lapply(.SD, function(x) {
             if (is.character(x)) {
                 return(as.numeric(as.factor(x)))
             } else if (is.factor(x)) {
@@ -586,7 +605,7 @@ contmle <- function(dt,
             if (any(estimation[[each]]$fit=="cox.hal") | any(estimation[[each]]$fit=="cox.hal.sl")) { #--- only testing.
                 
                 if (hal.screening) { #--- first screening
-
+                    
                     (one.way.screening <- hal.screening(covars=covars, dt=dt, cut.one.way=5,# browse=TRUE,
                                                         mat=mat, delta.var=delta.var, delta.value=fit.delta,
                                                         treatment=A.name))
@@ -613,13 +632,179 @@ contmle <- function(dt,
                         diff(mat2[time<=tau, exp(-cumsum(dhaz1*fit.cox1))[.N], by=c("id", A.name)][, mean(V1), by=A.name][order(V1), V1])
                     }
 
+                } else if (hal.sl) {
+
+                    (one.way.screening <- hal.screening(covars=covars, dt=dt, cut.one.way=5,# browse=TRUE,
+                                                        mat=mat, delta.var=delta.var, delta.value=fit.delta,
+                                                        treatment=A.name))
+
+                    (two.way.screening <- hal.screening(covars=one.way.screening, dt=dt, cut.one.way=5,
+                                                        delta.var=delta.var, delta.value=fit.delta,
+                                                        treatment=A.name, order=2,
+                                                        mat=mat))
+                    
+                    tune.grid <- expand.grid(cut.one.way=cut.one.way.grid, #ceiling(seq(5, 20, length=6))
+                                             cut.two.way=cut.two.way.grid) #ceiling(seq(0, 20, length=5))
+
+                    cve.tune.grid <- sapply(1:nrow(tune.grid), function(jj) {
+                        return(fit.hal(covars=covars, dt=dt, cut.one.way=tune.grid[jj,"cut.one.way"],
+                                       mat=mat, delta.var=delta.var, V=V,
+                                       intervention=a,
+                                       two.way=two.way.screening, 
+                                       cut.two.way=tune.grid[jj,"cut.two.way"], 
+                                       penalize.treatment=FALSE,
+                                       delta.value=fit.delta,
+                                       verbose=verbose, 
+                                       predict=max(tau), treatment.prediction=A.name, 
+                                       treatment=A.name,
+                                       return.cve=TRUE)$cve$min$cve)
+                    })
+
+                    tune.grid$cve <- cve.tune.grid
+
+                    if (any(estimation[[each]]$fit=="cox.hal.sl") & output.tune.grid) {
+                        return(data.table(cve=c(tune.grid$cve, estimation[[each]]$sl.cve),
+                                          cut.one.way=c(tune.grid$cut.one.way, rep(NA, length(estimation[[each]]$sl.cve))),
+                                          cut.two.way=c(tune.grid$cut.two.way, rep(NA, length(estimation[[each]]$sl.cve))),
+                                          which=c(rep("hal", length(tune.grid$cve)),
+                                                  rep("cox", length(estimation[[each]]$sl.cve)))))
+                    }
+
+                    if (FALSE) {
+                        if (any(estimation[[each]]$fit=="cox.hal.sl")) {
+                            tune.grid2 <- data.table(cve=c(tune.grid$cve, estimation[[each]]$sl.cve),
+                                                     cut.one.way=c(tune.grid$cut.one.way, rep(NA, length(estimation[[each]]$sl.cve))),
+                                                     cut.two.way=c(tune.grid$cut.two.way, rep(NA, length(estimation[[each]]$sl.cve))),
+                                                     which=c(rep("hal", length(tune.grid$cve)),
+                                                             rep("cox", length(estimation[[each]]$sl.cve))))
+                            #setorder(tune.grid2, cut.two.way, cut.one.way)
+                            tune.grid2[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+                            tune.grid2[which!="cox", nodes:=0]
+                            tune.grid2[which=="cox", perfor:=unlist(lapply(sl.models, function(x) "perfor"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+                            tune.grid2[which!="cox", perfor:=0]
+                            tune.grid2[which=="cox", rx.perfor:=unlist(lapply(sl.models, function(x) "rx*perfor"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+                            tune.grid2[which!="cox", rx.perfor:=0]
+                            tune.grid2[which!="cox", table(rx.perfor, nodes)]
+                            #tune.grid2[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+                            #tune.grid2[which!="cox", nodes.squared:=0]
+                            setorder(tune.grid2, which, nodes, perfor)
+                            tune.grid2[, xnum:=as.numeric(1:.N), by=which]
+                            max.xnum.hal <- tune.grid2[which=="hal", max(xnum)]
+                            tune.grid2[which=="cox", xnum:=xnum/30+max.xnum.hal+2]
+                            tune.grid2[which=="cox" & !nodes & perfor, xnum:=xnum+1]
+                            tune.grid2[which=="cox" & nodes, xnum:=xnum+3]
+                            tune.grid2[which=="cox" & nodes & perfor, xnum:=xnum+1]
+                            tune.grid2[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
+                            #lapply(sl.models, function(x) gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]]))
+                            tune.grid2[, pos.text:=mean(xnum), by=c("which", "cut.two.way", "nodes")]
+                            tune.grid2[, pos.text2:=mean(xnum), by=c("which", "cut.two.way", "nodes", "perfor")]
+                            tune.grid2[, idN:=1:.N, by=c("cut.two.way", "nodes")]
+                            tune.grid2[, N:=.N, by=c("cut.two.way", "nodes")]
+                            tune.grid2[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
+                            tune.grid2[which=="cox" & nodes, lab.text:=paste0("'nodes' included")]
+                            tune.grid2[which=="cox" & !nodes, lab.text:=paste0("'nodes' excluded")]
+                            tune.grid2[which=="cox" & perfor, lab.text2:=paste0("'perfor' included")]
+                            tune.grid2[which=="cox" & !perfor, lab.text2:=paste0("'perfor' excluded")]
+                            tune.grid2[, idN2:=1:.N, by=c("cut.two.way", "nodes", "perfor")]
+                            tune.grid2[, N2:=.N, by=c("cut.two.way", "nodes", "perfor")]
+                            tune.grid2[, max.cve:=max(cve)]
+                            tune.grid2[, min.cve:=min(cve), by=c("which", "nodes")]
+                            tune.grid2[!nodes & perfor, min.cve:=min.cve-2]
+                            tune.grid2[!nodes & !perfor, pos.text2:=pos.text2+0.5]
+                            min.pos.text <- tune.grid2[which=="hal", min(pos.text)]
+                            ggplot(tune.grid2) +
+                                theme_bw(base_size=25) +
+                                geom_point(data=tune.grid2[which=="cox"],
+                                           aes(x=xnum, y=cve, col=perfor, shape=rx.perfor), size=3) +
+                                scale_shape_manual("", values=c(1, 2), labels=c("rx*perfor excluded",
+                                                                                "rx*perfor included")) +
+                                geom_point(data=tune.grid2[which=="hal"],
+                                           aes(x=xnum, y=cve), size=3) +
+                                geom_label(data=tune.grid2[idN==1 & which=="cox"],
+                                           aes(x=pos.text, y=max.cve+3, label=lab.text)) +
+                                geom_label(data=tune.grid2[idN2==1 & which=="cox"],
+                                           aes(x=pos.text2, y=min.cve-3, label=lab.text2)) +
+                                geom_label(data=tune.grid2[idN==1 & which=="hal"],
+                                           aes(x=pos.text, y=max.cve+3, label=lab.text)) +
+                                geom_vline(data=tune.grid2[which=="hal"],
+                                           aes(xintercept=pos.text+min.pos.text-0.5),
+                                           linetype="dashed", alpha=0.4) +
+                                geom_vline(data=tune.grid2[which=="hal"],
+                                           aes(xintercept=0.5),
+                                           linetype="dashed", alpha=0.4) +
+                                geom_vline(data=tune.grid2[which=="cox" & idN==N],
+                                           aes(xintercept=xnum+1),
+                                           linetype="dashed", alpha=0.4) +
+                                scale_color_manual(values=c("gray13", "gray56"), guide="none") + 
+                                xlab("cut.one.way") + ylab("CVE") + 
+                                theme(axis.title.x=element_text(size=16, hjust=0.3),
+                                      axis.text=element_text(size=12),
+                                      legend.position=c(.85,.48),
+                                      legend.background=element_rect(fill='transparent')) + 
+                                scale_x_continuous(breaks=tune.grid2[which=="hal"]$xnum,
+                                                   labels=tune.grid2[which=="hal"]$cut.one.way)#+
+
+                            #sl.models.cve <- data.table(sl.models.grid[1:length(sl.models),], cve=estimation[[each]]$sl.cve)
+                            #sl.models.cve[sl.models.cve$cve==min(sl.models.cve$cve),]
+                            #sl.models.cve <- sl.models.cve[order(cve),]
+                            #sl.models.cve[sl.models.cve$cve<=quantile(sl.models.cve$cve)[2],]
+                            #sl.models.cve$xnum <- 1:nrow(sl.models.cve)
+                            #ggplot(sl.models.cve) +
+                            #    theme_bw(base_size=25) +
+                            #    geom_point(aes(x=xnum, y=cve, col=factor(nodes)), size=3)# +
+                            #facet_wrap(.~nodes)
+                        }
+                        ggplot(tune.grid) +
+                            theme_bw(base_size=25) +
+                            geom_point(aes(x=cut.one.way, y=cve, col=(cut.two.way)), size=3) #+
+                        #scale_shape_manual(values=c(1, 4, 8))
+                    }
+
+                    tune.grid.min <- tune.grid[order(tune.grid$cut.one.way, tune.grid$cut.two.way), ]
+                    tune.grid.min <- tune.grid.min[tune.grid.min$cve==min(tune.grid.min$cve),][1,]
+
+                    if (any(estimation[[each]]$fit=="cox.hal.sl")) {
+                        
+                        #-- need to pick hal if this minimizes cve, otherwise pick sl; 
+                        
+                        if (tune.grid.min[["cve"]]<estimation[[each]]$cve.sl.pick) {
+                            mat <- fit.hal(covars=covars, dt=dt, cut.one.way=tune.grid.min[1,"cut.one.way"],
+                                           mat=mat, delta.var=delta.var, V=V,
+                                           intervention=a,
+                                           two.way=two.way.screening, 
+                                           cut.two.way=tune.grid.min[1,"cut.two.way"], 
+                                           penalize.treatment=FALSE,
+                                           delta.value=fit.delta,
+                                           verbose=verbose.hal, 
+                                           predict=max(tau), treatment.prediction=A.name, 
+                                           treatment=A.name)
+                            if (verbose.hal & verbose.sl) print(paste0("use cox-hal rather than cox-sl"))
+                        } else {
+                            if (verbose.hal & verbose.sl) print(paste0("use cox-SL rather than cox-hal"))
+                        }
+
+                    } else {
+
+                        mat <- fit.hal(covars=covars, dt=dt, cut.one.way=tune.grid.min[1,"cut.one.way"],
+                                       mat=mat, delta.var=delta.var, V=V,
+                                       intervention=a,
+                                       two.way=two.way.screening, 
+                                       cut.two.way=tune.grid.min[1,"cut.two.way"], 
+                                       penalize.treatment=FALSE,
+                                       delta.value=fit.delta,
+                                       verbose=verbose.hal, 
+                                       predict=max(tau), treatment.prediction=A.name, 
+                                       treatment=A.name)
+                    }
+                    
+
                 } else {
 
                     mat <- fit.hal(covars=covars, dt=dt, cut.one.way=15,
                                    mat=mat, delta.var=delta.var, V=V,
                                    intervention=a, 
                                    penalize.treatment=FALSE,
-                                   verbose=verbose, delta.value=fit.delta,
+                                   verbose=verbose.hal, delta.value=fit.delta,
                                    predict=max(tau), treatment.prediction=A.name, 
                                    treatment=A.name)
                     
@@ -627,10 +812,10 @@ contmle <- function(dt,
                 
             } else {
 
+                if (verbose) print(paste0("use HAL for = ", fit.name))
+
                 if (hal.screening) { #--- first screening
                   
-                    print(paste0("EACH = ", each))
-
                     (one.way.screening <- hal.screening(covars=covars, dt=dt, cut.one.way=5, time.var="time",
                                                         cut.time=3, mat=mat, delta.var="delta.obs",
                                                         delta.value=fit.delta,
@@ -654,31 +839,6 @@ contmle <- function(dt,
                         diff(mat[time<=tau, exp(-cumsum(dhaz1*fit.cox1))[.N], by=c("id", A.name)][, mean(V1), by=A.name][order(V1), V1])
                     }
 
-                    if (FALSE) { ##-- 
-                        cve1 <- lapply(list(NULL, 3, 4, 5), function(xx) fit.hal(covars=one.way.screening, dt=dt, cut.one.way=15,
-                                                                                 time.var=time.var, cut.time=10,
-                                                                                 mat=mat, delta.var="delta.obs", V=V,
-                                                                                 intervention=a, 
-                                                                                 verbose=FALSE, delta.value=fit.delta,
-                                                                                 two.way=two.way.screening, cut.two.way=cut.two.way, 
-                                                                                 penalize.treatment=FALSE, penalize.time=FALSE,
-                                                                                 predict=max(tau), treatment.prediction=A.name, 
-                                                                                 treatment="A.obs", cut.time.treatment=xx,
-                                                                                 return.cve=TRUE)$cve$min$cve)
-                        cut.time.A <- unlist(list(NULL, 3, 4, 5)[unlist(cve1)==min(unlist(cve1))])
-                        cve2 <- lapply(list(NULL, 3, 4, 5, 7), function(xx) fit.hal(covars=one.way.screening, dt=dt, cut.one.way=15,
-                                                                                    time.var=time.var, cut.time=10,
-                                                                                    mat=mat, delta.var="delta.obs", V=V,
-                                                                                    intervention=a, 
-                                                                                    verbose=FALSE, delta.value=fit.delta,
-                                                                                    two.way=two.way.screening, cut.two.way=xx, 
-                                                                                    penalize.treatment=FALSE, penalize.time=FALSE,
-                                                                                    predict=max(tau), treatment.prediction=A.name, 
-                                                                                    treatment="A.obs", cut.time.treatment=cut.time.A,
-                                                                                    return.cve=TRUE)$cve$min$cve)
-                        cut.two.way <- unlist(list(NULL, 3, 4, 5, 7)[unlist(cve2)==min(unlist(cve2))])
-                    }
-
                     mat <- fit.hal(covars=one.way.screening, dt=dt, cut.one.way=15,
                                    time.var=time.var, cut.time=10,
                                    mat=mat, delta.var="delta.obs", V=V,
@@ -694,14 +854,105 @@ contmle <- function(dt,
                         mat[time<=tau, exp(-cumsum(dhaz1*fit.cox1))[.N], by=c("id", A.name)][, mean(V1), by=A.name][order(V1), V1]
                     }
                         
-                } else {
+                } else if (hal.sl) {
 
-                    print(paste0("EACH = ", each))
+                    tune.grid <- expand.grid(cut.time=c(10, 13, 16),
+                                             cut.time.treatment=c(0, 5, 10),
+                                             cut.one.way=c(5, 10, 15),
+                                             cut.two.way=c(0, 5, 10))
+
+                    cve.tune.grid <- sapply(1:nrow(tune.grid), function(jj) {
+                        return(fit.hal(covars=covars, dt=dt, cut.one.way=tune.grid[jj,"cut.one.way"],
+                                       time.var=time.var, cut.time=tune.grid[jj,"cut.time"],
+                                       mat=mat, delta.var="delta.obs", V=V,
+                                       intervention=a, 
+                                       verbose=FALSE, delta.value=fit.delta,
+                                       cut.two.way=tune.grid[jj,"cut.two.way"], 
+                                       penalize.treatment=FALSE, penalize.time=FALSE,
+                                       predict=max(tau), treatment.prediction=A.name, 
+                                       treatment="A.obs", cut.time.treatment=tune.grid[jj,"cut.time.treatment"],
+                                       return.cve=TRUE)$cve$min$cve)
+                    })
+
+                    tune.grid$cve <- cve.tune.grid
+                    tune.grid$cut.two.way2 <- paste0("cut.two.way = ", tune.grid$cut.two.way)
+                    tune.grid$cut.time2 <- paste0("cut.time = ", tune.grid$cut.time)
+
+                    if (FALSE) {
+                        ggplot(tune.grid) +
+                            theme_bw(base_size=25) +
+                            geom_point(aes(x=cut.one.way, y=cve, shape=factor(cut.time.treatment)), size=3) +
+                            labs(shape="cut.time.treatment") +
+                            scale_shape_manual(values=c(1, 4, 8)) + 
+                            facet_grid(cut.two.way2 ~ cut.time2)
+                    }
+
+                    tune.grid.min <- tune.grid[order(tune.grid$cut.time, tune.grid$cut.time.treatment, tune.grid$cut.one.way, tune.grid$cut.two.way), ]
+                    tune.grid.min <- tune.grid.min[tune.grid.min$cve==min(tune.grid.min$cve),][1,]
+
+                    if (FALSE) {
+                        cve0 <- lapply(list(10, 13, 16), function(xx) fit.hal(covars=covars, dt=dt, cut.one.way=cut.one.way,
+                                                                              time.var=time.var, cut.time=xx,
+                                                                              mat=mat, delta.var="delta.obs", V=V,
+                                                                              intervention=a, 
+                                                                              verbose=FALSE, delta.value=fit.delta,
+                                                                              cut.two.way=cut.two.way, 
+                                                                              penalize.treatment=FALSE, penalize.time=FALSE,
+                                                                              predict=max(tau), treatment.prediction=A.name, 
+                                                                              treatment="A.obs", cut.time.treatment=cut.time.A,
+                                                                              return.cve=TRUE)$cve$min$cve)
+                        cut.time <- list(10, 13, 16)[unlist(cve0)==min(unlist(cve0))][[1]]
+                        cve1 <- lapply(list(NULL, 3, 4, 5), function(xx) fit.hal(covars=covars, dt=dt, cut.one.way=cut.one.way,
+                                                                                 time.var=time.var, cut.time=10,
+                                                                                 mat=mat, delta.var="delta.obs", V=V,
+                                                                                 intervention=a, 
+                                                                                 verbose=FALSE, delta.value=fit.delta,
+                                                                                 cut.two.way=cut.two.way, 
+                                                                                 penalize.treatment=FALSE, penalize.time=FALSE,
+                                                                                 predict=max(tau), treatment.prediction=A.name, 
+                                                                                 treatment="A.obs", cut.time.treatment=xx,
+                                                                                 return.cve=TRUE)$cve$min$cve)
+                        cut.time.A <- list(NULL, 3, 4, 5)[unlist(cve1)==min(unlist(cve1))][[1]]
+                        cve2 <- lapply(list(3, 5, 7, 10, 12, 15), function(xx) fit.hal(covars=covars, dt=dt, cut.one.way=xx,
+                                                                                       time.var=time.var, cut.time=10,
+                                                                                       mat=mat, delta.var="delta.obs", V=V,
+                                                                                       intervention=a, 
+                                                                                       verbose=FALSE, delta.value=fit.delta,
+                                                                                       cut.two.way=cut.two.way, 
+                                                                                       penalize.treatment=FALSE, penalize.time=FALSE,
+                                                                                       predict=max(tau), treatment.prediction=A.name, 
+                                                                                       treatment="A.obs", cut.time.treatment=cut.time.A,
+                                                                                       return.cve=TRUE)$cve$min$cve)
+                        cut.one.way <- list(3, 5, 7, 10, 12, 15)[unlist(cve2)==min(unlist(cve2))][[1]]
+                        cve3 <- lapply(list(NULL, 3, 4, 5, 7), function(xx) fit.hal(covars=covars, dt=dt, cut.one.way=cut.one.way,
+                                                                                    time.var=time.var, cut.time=10,
+                                                                                    mat=mat, delta.var="delta.obs", V=V,
+                                                                                    intervention=a, 
+                                                                                    verbose=FALSE, delta.value=fit.delta,
+                                                                                    cut.two.way=xx, 
+                                                                                    penalize.treatment=FALSE, penalize.time=FALSE,
+                                                                                    predict=max(tau), treatment.prediction=A.name, 
+                                                                                    treatment="A.obs", cut.time.treatment=cut.time.A,
+                                                                                    return.cve=TRUE)$cve$min$cve)
+                        cut.two.way <- list(NULL, 3, 4, 5, 7)[unlist(cve3)==min(unlist(cve3))][[1]]
+                    }
+                    
+                    mat <- fit.hal(covars=covars, dt=dt, cut.one.way=tune.grid.min[,"cut.one.way"],
+                                   time.var=time.var, cut.time=tune.grid.min[,"cut.time"],
+                                   mat=mat, delta.var="delta.obs", V=V,
+                                   intervention=a, 
+                                   verbose=verbose.hal, delta.value=fit.delta,
+                                   cut.two.way=tune.grid.min[,"cut.two.way"], 
+                                   penalize.treatment=FALSE, penalize.time=FALSE,
+                                   predict=max(tau), treatment.prediction=A.name, 
+                                   treatment="A.obs", cut.time.treatment=tune.grid.min[,"cut.time.treatment"])
+                                           
+                } else {
 
                     mat <- fit.hal(covars=covars, dt=dt, cut.one.way=15, time.var=time.var, cut.time=10,
                                    mat=mat, delta.var="delta.obs", V=V,
                                    intervention=a, 
-                                   verbose=verbose, delta.value=fit.delta,
+                                   verbose=verbose.hal, delta.value=fit.delta,
                                    penalize.treatment=FALSE, penalize.time=FALSE,
                                    predict=max(tau), treatment.prediction=A.name, 
                                    treatment="A.obs", cut.time.treatment=cut.time.A)
@@ -754,7 +1005,6 @@ contmle <- function(dt,
         }
         mat[prob.A<=cut.off.cens, prob.A:=cut.off.cens]
     }
-
 
     #-- 9 -- compute clever covariates:
 
@@ -1309,12 +1559,9 @@ contmle <- function(dt,
 
             Pn.eic2 <- Pn.eic2.fun(Pn.eic)
 
-            #print("CHECK 3")
-            #print(Pn.eic2)
-            
             Pn.eic.norm <- Pn.eic.norm.fun(Pn.eic2, Pn.eic)
 
-            print(paste0("step = ", step))
+            if (verbose) print(paste0("step = ", step))
             if (verbose) print(paste0("Pn.eic.norm=", Pn.eic.norm))
             
             if (Pn.eic.norm.prev<=Pn.eic.norm) { # reset all columns to '.tmp'
@@ -1408,7 +1655,7 @@ contmle <- function(dt,
                 if (verbose) print(paste0("converged", " at ", step, "th step"))
                 if (verbose) print(paste0("eic = ", Pn.eic.fun(mat)))
 
-                if (output.mat %in% paste0(1:10)) {
+                if (output.mat=="updated") {
                     return(mat)
                 }
 
@@ -1635,7 +1882,13 @@ contmle <- function(dt,
                         }
                     }
 
-                    if (output.mat %in% paste0(1:10) & iter==as.numeric(output.mat)) {
+                    if (output.mat=="updated") {
+                        for (each in outcome.index) {
+                            fit.delta <- estimation[[each]][["event"]]
+                            mat[, (paste0("F", fit.delta, ".t")):=cumsum(surv.t*get(paste0("dhaz", fit.delta))*
+                                                                         get(paste0("fit.cox", fit.delta))),
+                                by=c("id", A.name)]
+                        }
                         return(mat)
                     }
 
@@ -1743,8 +1996,8 @@ contmle <- function(dt,
 
             #-- 12c -- evaluate target parameter:
 
-            if (output.mat %in% paste0(1:10)) {
-                return(update.fit.inner)
+            if (output.mat=="updated") {
+                return(update.fit.inner[[1]])
             }
 
             update.list.inner <- do.call("cbind", lapply(1:length(update.fit.inner), function(each.index) {
@@ -1757,8 +2010,8 @@ contmle <- function(dt,
             return(update.list.inner)
         })
 
-        if (output.mat %in% paste0(1:10)) {
-            return(update.fit)
+        if (output.mat=="updated") {
+            return(update.fit[[1]])
         }
         
         #-- 12c -- evaluate target parameter:
@@ -1805,7 +2058,7 @@ contmle <- function(dt,
         generate.max <- list()
         repeat.no <- 50000
         for (mm in 1:repeat.no) {
-            set.seed(10303+mm)
+            set.seed(ceiling(sum(as.numeric(dt[[A.name]])))+mm)
             Z <-  try(mvrnorm(n=1, rep(0, nrow(rho)), rho, tol=1e-6, empirical=FALSE))
             if (any(class(Z)=="try-error")) {
                 generate.max[[mm]] <- NA

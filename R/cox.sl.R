@@ -65,13 +65,13 @@ cox.sl <- function(loss.fun, dt, V=5, seed=19192,
         if (length(change.points)>1) {
             cve.tmp <- sapply(change.points, function(change.point)
                 cv.fun(loss.fun=cox.loss.fun, dt=dt, cox.model=cox.model[[1]],
-                       delta.var=delta.var, delta.value=delta.value,
+                       delta.var=delta.var, delta.value=delta.value, V=V,
                        change.point=change.point, treatment=treatment))
             names(cve.tmp) <- paste0("changepoint=", change.points)
             return(cve.tmp)
         } else {
             return(cv.fun(loss.fun=cox.loss.fun, dt=dt, cox.model=cox.model[[1]],
-                          delta.var=delta.var, delta.value=delta.value,
+                          delta.var=delta.var, delta.value=delta.value, V=V,
                           change.point=change.points, treatment=treatment))
         }
     })

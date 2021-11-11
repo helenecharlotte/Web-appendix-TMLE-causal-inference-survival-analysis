@@ -313,92 +313,48 @@ fit.hal <- function(covars, dt, treatment=NULL, V=5, cut.one.way=8, method.risk=
             }
 
         } else {
-
+            
             X.hal.a <- lapply(intervention, function(a) {
-                return(basis.fun(covars=covars, treatment=treatment, cut.one.way=cut.one.way, dt=copy(dt)[,(treatment):=a],
+                return(basis.fun(covars=covars, treatment=treatment, cut.one.way=cut.one.way,
+                                 dt=copy(dt)[,(treatment):=a],
                                  time.var=time.var, cut.time=cut.time, cut.time.treatment=cut.time.treatment,
                                  predict=predict,
                                  delta.var=delta.var, delta.value=delta.value,
                                  two.way=two.way, cut.two.way=cut.two.way))
             })
-            ## X.hal1 <- basis.fun(covars=covars, treatment=treatment, cut.one.way=cut.one.way, dt=copy(dt)[,(treatment):=1],
-            ##                     time.var=time.var, cut.time=cut.time, cut.time.treatment=cut.time.treatment,
-            ##                     predict=predict,
-            ##                     delta.var=delta.var, delta.value=delta.value,
-            ##                     two.way=two.way, cut.two.way=cut.two.way)
-            ## X.hal0 <- basis.fun(covars=covars, treatment=treatment, cut.one.way=cut.one.way, dt=copy(dt)[,(treatment):=0],
-            ##                     time.var=time.var, cut.time=cut.time, cut.time.treatment=cut.time.treatment,
-            ##                     predict=predict,
-            ##                     delta.var=delta.var, delta.value=delta.value,
-            ##                     two.way=two.way, cut.two.way=cut.two.way)
 
+            survfit.hal <- lapply(1:length(intervention), function(aa) {
+                survival::survfit(hal.fit, x=X.hal, y=Y.hal, s=lambda.cv,
+                                  newx=X.hal.a[[aa]])})
 
-            basehaz.a <- lapply(1:length(intervention), function(aa) {
-                return(glmnet_basesurv(dt[, time], dt[, get(delta.var)==delta.value],
-                                       predict(hal.fit, X.hal.a[[aa]], type="link"), centered=TRUE))
-            })
-            ## basehaz1 <- glmnet_basesurv(dt[, time], dt[, get(delta.var)==delta.value],
-            ##                             predict(hal.fit, X.hal1, type="link"), centered=TRUE)
-            ## basehaz0 <- glmnet_basesurv(dt[, time], dt[, get(delta.var)==delta.value],
-            ##                             predict(hal.fit, X.hal0, type="link"), centered=TRUE)
+            predict.hal <- do.call("rbind", lapply(1:length(intervention), function(aa) {
+                return(do.call("rbind", lapply(1:ncol(survfit.hal[[aa]]$surv), function(jj) {
+                    tmp <- data.table(id=jj,
+                                      time=survfit.hal[[aa]]$time,
+                                      surv=survfit.hal[[aa]]$surv[,jj],
+                                      cumhaz=survfit.hal[[aa]]$cumhaz[,jj])
+                    tmp[, dhaz:=c(0, diff(cumhaz))]
+                    tmp[, (treatment):=intervention[aa]]
+                    return(tmp)
+                })))
+            }))
 
-            basehaz <-  data.table(time=c(0, basehaz.a[[1]]$time))
-
-            for (aa in 1:length(intervention)) {
-                basehaz[, (paste0("hazard", intervention[aa])):=c(0, basehaz.a[[aa]]$cumulative_base_hazard)]
-            }
-
-            basehaz <- basehaz[time<=predict]
-            
-            ## basehaz <- data.table(time=c(0, basehaz1$time),
-            ##                       hazard1=c(0, basehaz1$cumulative_base_hazard),
-            ##                       hazard0=c(0, basehaz0$cumulative_base_hazard))[time<=predict]
-            
             if (length(mat)>0) {
 
-                mat <- do.call("rbind", lapply(intervention, function(a) {
-                    return(merge(mat[get(treatment)==a], basehaz,
-                                 by="time", all.x=TRUE)[, (paste0("chaz", delta.value)):=get(paste0("hazard", a))][, (paste0("hazard", a)):=NULL])
-                }))
-                ## mat <- rbind(merge(mat[get(treatment)==1], basehaz,
-                ##                    by="time", all.x=TRUE),
-                ##              merge(mat[get(treatment)==0], basehaz,
-                ##                    by="time", all.x=TRUE))
+                #print("here")
+                #browser()
 
-                ## mat[get(treatment)==1, (paste0("chaz", delta.value)):=hazard1]
-                ## mat[get(treatment)==0, (paste0("chaz", delta.value)):=hazard0]
+                if ("cumhaz" %in% names(mat))
+                    mat[, cumhaz:=NULL]
 
-                ## mat[, hazard1:=NULL]
-                ## mat[, hazard0:=NULL]
+                if ("dhaz" %in% names(mat))
+                    mat[, dhaz:=NULL]
 
-                mat[, (paste0("chaz", delta.value)):=na.locf(get(paste0("chaz", delta.value))), by=c("id", treatment)]
+                mat <- merge(mat, predict.hal, by=c("id", "time", treatment))
 
-                mat[, (paste0("dhaz", delta.value)):=
-                          c(0, diff(get(paste0("chaz", delta.value)))), by=c("id", treatment)]
-
-                for (aa in 1:length(intervention)) {
-                    dt[, (paste0("fit.hal", intervention[aa],".", delta.value)):=exp(predict(hal.fit, newx=X.hal.a[[aa]], type="link", s=lambda.cv))]
-                }
-                ## dt[, (paste0("fit.hal1.", delta.value)):=exp(predict(hal.fit, newx=X.hal1, type="link", s=lambda.cv))]
-                ## dt[, (paste0("fit.hal0.", delta.value)):=exp(predict(hal.fit, newx=X.hal0, type="link", s=lambda.cv))]
-
-                mat <- do.call("rbind", lapply(intervention, function(a) {
-                    return(merge(mat[get(treatment)==a, -paste0("fit.cox", delta.value), with=FALSE],
-                                 dt[, (paste0("fit.cox", delta.value)):=
-                                          get(paste0("fit.hal", a,".", delta.value))][, c("id", paste0("fit.cox", delta.value)),
-                                                                                      with=FALSE],
-                                 by="id", all.x=TRUE))
-                }))
-                ## mat <- rbind(merge(mat[get(treatment)==1, -paste0("fit.cox", delta.value), with=FALSE],
-                ##                    dt[, (paste0("fit.cox", delta.value)):=
-                ##                             get(paste0("fit.hal1.", delta.value))][, c("id", paste0("fit.cox", delta.value)),
-                ##                                                                    with=FALSE],
-                ##                    by="id", all.x=TRUE),
-                ##              merge(mat[get(treatment)==0, -paste0("fit.cox", delta.value), with=FALSE],
-                ##                    dt[, (paste0("fit.cox", delta.value)):=
-                ##                             get(paste0("fit.hal0.", delta.value))][, c("id", paste0("fit.cox", delta.value)),
-                ##                                                                    with=FALSE],
-                ##                    by="id", all.x=TRUE))
+                mat[, (paste0("fit.cox", delta.value)):=1]
+                mat[, (paste0("chaz", delta.value)):=cumhaz]
+                mat[, (paste0("dhaz", delta.value)):=dhaz]
 
                 if (delta.value==0) {
                     mat[, "surv.C.hal":=
@@ -414,10 +370,11 @@ fit.hal <- function(covars, dt, treatment=NULL, V=5, cut.one.way=8, method.risk=
                 } else {
                     return(mat)
                 }
-                
+
             }
 
             if (length(intervention)>1) {
+                warning("option to predict directly not maintained")
                 return(list(fit=hal.fit,
                             cve=cve.hal,
                             target.fit=-mean(exp(-exp(predict(hal.fit, type="link", newx=X.hal1, s=lambda.cv))*basehaz[nrow(basehaz), hazard1])-
@@ -427,6 +384,15 @@ fit.hal <- function(covars, dt, treatment=NULL, V=5, cut.one.way=8, method.risk=
                             cve=cve.hal,
                             target.fit=1-mean(exp(-exp(predict(hal.fit, type="link", newx=X.hal.a[[1]], s=lambda.cv))*basehaz[nrow(basehaz), get(paste0("hazard", intervention))]))))
             }
+
+            ## mat2[, surv.cox:=exp(-chaz1*fit.cox1)]
+            ## mat2[, dhaz.cox:=dhaz1*fit.cox1]
+
+            ## plot(mat2[id==1, dhaz], mat2[id==1, dhaz1*fit.cox1])
+            ## summary(lm(mat2[id==1, dhaz] ~ mat2[id==1, dhaz1*fit.cox1]))            
+
+            ## plot(mat2[id==1, surv.cox], mat2[id==1, surv])
+            ## summary(lm(mat2[id==1, surv.cox] ~ mat2[id==1, surv]))
             
         }
 
