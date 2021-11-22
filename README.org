@@ -9,7 +9,7 @@ We provide =R= code to apply our current implementations of TMLE for
 estimation of causal parameters in survival and competing risks
 settings; this includes the iterative and the one-step targeting
 procedures as well as super learning to combine different Cox
-regression models or variations over the Poisson-based highly adaptive
+regression models or variations over the highly adaptive
 lasso (HAL) estimator. \\
 
 Although the current implementations can be applied to new data
@@ -59,7 +59,7 @@ path.to.file <- "~/research/TMLE-from-2020june/survival-baseline/Web-appendix-TM
 ** Data example 
 
 In our manuscript we use the publicly available dataset =colon= from
-the =survival= package in =R= as a running example. These are data
+the =survival= package in =R= for demonstration. These are data
 from a trial on adjuvant chemotherapy for colon cancer, comparing
 levamisole treatment against levamisole treatment combined with
 fluorouracil (a chemotherapy agent) against no treatment. 
@@ -76,7 +76,8 @@ follows:
      the setting with two competing causes being cancer recurrence and
      death.
 
-Here we load the =colon= data and create the two datasets above:
+In this script we load the =colon= data and create the two datasets
+above:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
@@ -159,7 +160,7 @@ missing covariates.\\
 
 ** Simulated version of the =colon= data
 
-The following script sets up functionality to create simulated
+The following script sets up simple functionality to create simulated
 versions of the =colon= data:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -449,95 +450,6 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
     scale_shape_manual(values=c(1, 8, 9)) + 
     labs(shape="") +  
     theme(legend.position="bottom")   
-#+END_SRC    
-
-
-#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
-init.F1.Lev5FU.3yrs <- 
-    contmle(sim.colon.cr,  
-            estimation=list("relapse"=list(fit="cox",
-                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "death"=list(fit="cox",
-                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "cens"=list(fit="cox",
-                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
-                            ),
-            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
-            treat.effect="Lev+5FU",   
-            output.km=TRUE,
-            target=1,
-            output.mat="init", 
-            tau=3*365.25) 
-#+END_SRC    
-
-#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
-updated.F1.Lev5FU.3yrs <- 
-    contmle(sim.colon.cr,  
-            estimation=list("relapse"=list(fit="cox",
-                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "death"=list(fit="cox",
-                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "cens"=list(fit="cox",
-                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
-                            ),
-            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
-            treat.effect="Lev+5FU",   
-            output.km=TRUE,
-            target=1,
-            output.mat="updated",
-            tau=3*365.25) 
-#+END_SRC    
-
-#+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-tmle-update-colon-cr.pdf" :exports none  :session *R* :width 12 :height 8.5 :cache yes
-i <- 1 
-pdat <- rbind(data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
-                         init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, chaz1*fit.cox1]), 
-                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, cumsum(dhaz1*fit.cox1)]),
-                         cause=paste0("hat(Lambda)['1,n']", "~'['*'id'*'='*", i, "*']'"), 
-                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))),
-              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
-                         init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, chaz2*fit.cox2]), 
-                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, cumsum(dhaz2*fit.cox2)]),
-                         cause=paste0("hat(Lambda)['2,n']", "~'['*'id'*'='*", i, "*']'"), 
-                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))),
-              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
-                         ##init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, surv.t]), 
-                         init.Lambda=c(init.F1.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]), 
-                         ##updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, surv.t]),
-                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[, mean(surv.t), by="time"][[2]]),
-                         cause=paste0("hat(S)['n']", "~'[population average]'"), 
-                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))),
-              data.table(time=c(init.F1.Lev5FU.3yrs[id==i, time]), 
-                         ##init.Lambda=c(init.F1.Lev5FU.3yrs[id==i, F1.t]), 
-                         init.Lambda=c(init.F1.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]), 
-                         ##updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[id==i, F1.t]),
-                         updated.Lambda.a2=c(updated.F1.Lev5FU.3yrs[, mean(F1.t), by="time"][[2]]),
-                         cause=paste0("hat(F)['1,n']", "~'[population average]'"), 
-                         parameter=c(rep("'updated'~'for'~Psi['1,t'[0]]^2*(P)", length(init.F1.Lev5FU.3yrs[id==i, time])))))
-
-pdat.melt <- melt(pdat, id.vars=c("time", "parameter", "cause")) 
-
-pdat.melt[variable=="init.Lambda", variable:="initial"]
-pdat.melt[variable=="updated.Lambda.a0", variable:="a=0"]
-pdat.melt[variable=="updated.Lambda.a1", variable:="a=1"]
-pdat.melt[variable=="updated.Lambda.a2", variable:="updated"] 
-
-pdat.melt[, cause.factor:=factor(cause, ordered=TRUE, levels=pdat.melt[, unique(cause)])]
-
-ggplot(pdat.melt) + 
-    theme_bw(base_size=25) +     
-    theme(legend.position="bottom", 
-          axis.title.y=element_text(angle=0), 
-          axis.title.x=element_text(size=16),
-          axis.text=element_text(size=12),
-          legend.key.size=unit(3,"line")) + 
-    ylab("") + 
-    xlab("time (days)") +  
-    labs(linetype="") + 
-    facet_wrap(. ~ cause.factor, labeller=label_parsed, scales="free_y") + 
-    geom_line(aes(x=time, y=value, linetype=variable))    
 #+END_SRC    
 
 
