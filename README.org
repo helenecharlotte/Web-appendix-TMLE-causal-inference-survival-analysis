@@ -1,7 +1,7 @@
 # Web-appendix-TMLE-causal-inference-survival-analysis
 * Web appendix 
 
-This is the web-appendix to our manuscript entitled /On targeted/
+This is the web-appendix to our manuscript entitled /Targeted/
 /maximum likelihood estimation for causal inference in survival and
 competing risks analysis/. \\
 
@@ -51,6 +51,11 @@ source("./usage/load.R")
 #+END_SRC
 
 
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results none :exports none  :session *R* :cache yes  
+path.to.file <- "~/research/TMLE-from-2020june/survival-baseline/Web-appendix-TMLE-causal-inference-survival-analysis"
+#+END_SRC
+
 ** Data example 
 
 In our manuscript we use the publicly available dataset =colon= from
@@ -88,7 +93,6 @@ colnames(out) <- c("event", "N", "max follow-up")
 out    
 #+END_SRC    
 
-#+RESULTS[<2021-10-29 13:10:51> 7b09896c6e570ad22ad6291967e9a8bf38ed8e22]:
 :    event   N max follow-up
 : 1:     1 430          2910
 : 2:     0 458          3329
@@ -103,7 +107,6 @@ colnames(out) <- c("event", "N", "max follow-up")
 out 
 #+END_SRC    
 
-#+RESULTS[<2021-10-29 13:10:54> 2ca64145298424d8532010337689ae27eb04146b]:
 :  
 :   event   N max follow-up
 : 1:     0 405          3329
@@ -112,6 +115,43 @@ out
 
 Note that for both datasets we simply removed observations with
 missing covariates.\\
+
+
+#+Begin_Src latex :file "~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/figures/graph-multistate-colon.pdf" :packages '(("" "tikz")) :border 1em :results raw
+  % Define block styles   
+  \usetikzlibrary{shapes,arrows,snakes} 
+  \tikzstyle{astate} = [circle, draw, text centered, font=\footnotesize]
+  \tikzstyle{bstate} = [text centered, font=\footnotesize]
+  \tikzstyle{cstate} = [text centered, font=\footnotesize,fill=gray!20, draw=none, rectangle, rounded corners]
+  \tikzstyle{rstate} = [circle, draw, text centered, font=\footnotesize, minimum size=1.3cm]
+  \tikzstyle{r2state} = [circle, draw, text centered, font=\footnotesize, minimum size=1.8cm]
+  \tikzstyle{r1state} = [regular polygon,regular polygon sides=9, fill=gray!20, draw, text centered, font=\footnotesize, minimum size=0.05cm]
+  \tikzstyle{r3state} = [draw,rectangle,rectangle left angle=70,trapezium right angle=-70, font=\footnotesize]
+  \tikzstyle{r3stategray} = [draw,rectangle,rectangle left angle=70,trapezium right angle=-70, font=\footnotesize, color=gray] 
+  \tikzstyle{r4state} = [draw,ellipse,ellipse left angle=70,trapezium right angle=-70,fill=white!20,minimum height=0.6cm, font=\footnotesize]
+  \tikzstyle{r33state} = [draw,rectangle,rectangle left angle=70,trapezium right angle=-70,minimum height=0.7cm, font=\footnotesize]
+  \tikzstyle{r333state} = [draw,rectangle,rectangle left angle=70,trapezium right angle=-70,minimum height=0.3cm, font=\footnotesize]
+  \tikzstyle{r3333state} = [draw,rectangle,rectangle left angle=70,trapezium right angle=-70, rounded corners, minimum height=0.5cm, font=\footnotesize]
+  \tikzstyle{r5state} = [draw, star, star points=10, ]
+
+  \begin{tikzpicture}[->,>=stealth', shorten >=1pt, auto, node distance=2.8cm, semithick, font=\sffamily]
+   \node [r3state] (0) at (-0.5,0.2) {};
+    \node [bstate, left] (0a) at (-0.7,0.2) {\scriptsize initial state};
+    \node [r3state] (00) at (1.0,0.5) {1};
+ %   \node [r3state] (1) at (1.0,0.2) {1}; 
+    \node [bstate, right] (1a) at (1.2, 0.5) {\scriptsize cancer relapse};
+    \node [r3state] (3) at (1.0,-0.1) {2}; 
+    \node [bstate, right] (3a) at (1.2, -0.1) {\scriptsize relapse-free death}; 
+    \path (0) edge node {} (00) 
+      %    (0) edge node {} (1)
+        %  (0) edge node {} (2)  
+          (0) edge node {} (3)  
+          (0c) edge [dashed, white] node {} (a0) 
+  \end{tikzpicture} 
+#+end_src
+
+
+
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -143,7 +183,6 @@ set.seed(15)
 (sim.colon.surv <- synthesize.colon.fun(fit.colon=fit.colon, d=colon.surv, name.treat="rx", event.name="event")) 
 #+END_SRC   
 
-#+RESULTS[<2021-10-29 13:11:00> c7e699d1253b67994c877f80cb84480aaf152f38]:
 #+begin_example
      sex age obstruct perfor adhere nodes differ extent surg rx.num      rx      time event
   1:   0  69        0      0      0    12      2      3    0      3 Lev+5FU  634.0321     1
@@ -176,7 +215,6 @@ set.seed(31)
 (sim.colon.cr <- synthesize.colon.fun(fit.colon=fit.colon.cr, d=colon.cr, name.treat="rx", event.name="event"))
 #+END_SRC   
 
-#+RESULTS[<2021-10-29 13:11:02> 4060df973350b988c03054cb933ca4d977111eb8]:
 #+begin_example
      sex age obstruct perfor adhere nodes differ extent surg nodes.squared rx.num      rx      time event
   1:   0  55        1      0      0     4      1      3    0            16      2     Lev 2590.1288     0
@@ -235,7 +273,6 @@ colnames(tab2) <- paste0((1:10)/2)
 print(tab2)
 #+END_SRC    
 
-#+RESULTS[<2021-10-26 11:03:24> c713c541118ae841f940cfe9779e4624741a75be]:
 #+begin_example
 Absolute risks under treatment=Obs:
  
@@ -270,7 +307,6 @@ message("Average treatment effect of levamisole plus fluorouracil compared to no
 round(as.numeric(true.a2[(1:10)/2==3][[1]]["F1"] - true.a0[(1:10)/2==3][[1]]["F1"]),4)
 #+END_SRC   
 
-#+RESULTS[<2021-10-26 11:07:24> 315f367c8c44acc8387e5babd2376acfe8d2f4ad]:
 : Average treatment effect of levamisole compared to no treatment:
 : [1] -0.0215
 : 
@@ -350,7 +386,6 @@ fit.tmle.F1.Lev5FU.3yrs <-
 fit.tmle.F1.Lev5FU.3yrs
 #+END_SRC   
 
-#+RESULTS[<2021-10-26 11:16:28> 4fde8ef84e687d2368b16f764a018467840814f9]:
 #+begin_example
 $init
 $init$F1
@@ -416,8 +451,6 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
     theme(legend.position="bottom")   
 #+END_SRC    
 
-#+RESULTS[<2021-10-29 15:55:50> 7c23687c9f3e9ea83845437119f76a6b23ff42e8]:
-[[file:./figures/fig-illustrate-iterative-tmle-parameter-axis.pdf]]
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
@@ -507,8 +540,6 @@ ggplot(pdat.melt) +
     geom_line(aes(x=time, y=value, linetype=variable))    
 #+END_SRC    
 
-#+RESULTS[<2021-11-01 09:56:59> f9b22b0f8985450c48269afa2d10ea72e330bd2a]:
-[[file:./figures/fig-illustrate-tmle-update-colon-cr.pdf]]
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -548,7 +579,6 @@ fit.tmle.F1.F2.Lev5FU.3yrs <-
 fit.tmle.F1.F2.Lev5FU.3yrs
 #+END_SRC   
 
-#+RESULTS[<2021-10-26 11:30:48> e6eaf6c7c7fc1bd03323dbac1b68040f140b9467]:
 #+begin_example
 $init
 $init$F1
@@ -725,8 +755,6 @@ ggplot(pdat.melt) +
     ggtitle("Iterative TMLE applied for separate targeting:")  
 #+END_SRC    
 
-#+RESULTS[<2021-10-29 16:29:59> da003e78ec5e37d26bd149c2c535436d1a820828]:
-[[file:./figures/fig-illustrate-iterative-tmle-update-colon-cr-treat2.pdf]]
 
 
 
@@ -769,8 +797,7 @@ ggplot(pdat.melt) +
     ggtitle("One-step TMLE applied for simultaneous targeting:")  
 #+END_SRC    
 
-#+RESULTS[<2021-10-29 16:29:53> 42a7e6a16fb3fb70a5995cf9f614a7119c83350e]:
-[[file:./figures/fig-illustrate-one-step-tmle-update-colon-cr-treat2.pdf]]
+
 
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-iterative-tmle-update-colon-cr-treat2-averaged.pdf" :exports none  :session *R* :width 12 :height 8 :cache yes
@@ -832,8 +859,6 @@ ggplot(pdat.melt) +
     ggtitle("Iterative TMLE applied for separate targeting:")  
 #+END_SRC    
 
-#+RESULTS[<2021-11-01 09:53:25> fdb77c4a22acfd2e1f98bc18876eee3f4035b16a]:
-[[file:./figures/fig-illustrate-iterative-tmle-update-colon-cr-treat2-averaged.pdf]]
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-one-step-tmle-update-colon-cr-treat2-averaged.pdf" :exports none  :session *R* :width 12 :height 3.9 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
@@ -881,8 +906,6 @@ ggplot(pdat.melt) +
     ggtitle("One-step TMLE applied for simultaneous targeting:")  
 #+END_SRC    
 
-#+RESULTS[<2021-11-01 09:40:42> 3b7f132ef5ca3895040234ae8577be0d8b8eaddb]:
-[[file:./figures/fig-illustrate-one-step-tmle-update-colon-cr-treat2-averaged.pdf]]
 
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-illustrate-one-step-tmle-parameter-axis.pdf" :exports none  :session *R* :width 12 :height 1.5 :cache yes
@@ -914,8 +937,6 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
     theme(legend.position="bottom")   
 #+END_SRC    
 
-#+RESULTS[<2021-10-29 16:33:40> 698452ae742f2f292dde2f089ac9a7e088de0b06]:
-[[file:./figures/fig-illustrate-one-step-tmle-parameter-axis.pdf]]
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -929,7 +950,7 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none :session *R* :cache yes
 sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
-               "differ", "adhere", "extent", "surg", #"nodes.squared",
+               "differ", "adhere", "extent", "surg", 
                "rx*age", "rx*sex", "rx*perfor")
 sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
 names(sl.models.grid) <- sl.models
@@ -943,6 +964,176 @@ sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
 
 names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
 #+END_SRC
+
+*** Cox models for Cox super learner 
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none :session *R* :cache yes
+sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
+               "differ", "adhere", "extent", "surg",
+               "rx*age", "rx*sex", "rx*perfor")
+sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
+names(sl.models.grid) <- sl.models
+
+sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
+
+sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
+    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
+        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
+    })), collapse="+"))))})
+
+names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
+#+END_SRC
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none :session *R* :cache yes
+sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
+               "differ", "adhere", "extent", "surg",
+               "rx*age", "rx*sex", "rx*perfor")
+sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
+names(sl.models.grid) <- sl.models
+
+sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
+
+sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
+    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
+        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
+    })), collapse="+"))))})
+
+names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
+
+cox.hal.sl.event.Lev5FU.surv.3yrs <-  
+    contmle(colon.surv,  
+            estimation=list("outcome"=list(fit="cox.hal.sl",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",  
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            output.tune.grid=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            V=10,
+            tau=3*365.25)
+cox.hal.sl.cens.Lev5FU.surv.3yrs <-  
+    contmle(colon.surv,  
+            estimation=list("outcome"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox.hal.sl",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",  
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            output.tune.grid=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            V=10,
+            tau=3*365.25)
+#+END_SRC
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-colon-surv-initial-estimation-event.pdf" :exports none  :session *R* :width 10 :height 6 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")             
+
+tune.grid <- copy(cox.hal.sl.event.Lev5FU.surv.3yrs)    
+
+tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes:=0]
+tune.grid[which=="cox", differ:=unlist(lapply(sl.models, function(x) "differ"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", differ:=0]
+tune.grid[which=="cox", extent:=unlist(lapply(sl.models, function(x) "extent"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", extent:=0]
+tune.grid[which!="cox", table(extent, nodes)]
+#tune.grid[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+#tune.grid[which!="cox", nodes.squared:=0]
+setorder(tune.grid, which, nodes, differ)
+tune.grid[, xnum:=as.numeric(1:.N), by=c("which", "cut.two.way")] 
+max.xnum.hal <- tune.grid[which=="hal", max(xnum)]
+tune.grid[which=="cox", xnum:=xnum/20+max.xnum.hal+2]
+tune.grid[which=="cox" & !nodes & differ, xnum:=xnum+1]
+tune.grid[which=="cox" & nodes, xnum:=xnum+3]
+tune.grid[which=="cox" & nodes & differ, xnum:=xnum+1]
+tune.grid[, pos.text:=mean(xnum), by=c("which", "cut.two.way", "nodes")]
+tune.grid[, pos.text2:=mean(xnum), by=c("which", "cut.two.way", "nodes", "differ")]
+tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
+#lapply(sl.models, function(x) gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]]))
+tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
+tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
+tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("nodes included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
+tune.grid[which=="cox" & differ, lab.text2:=paste0("differ \n included")]
+tune.grid[which=="cox" & !differ, lab.text2:=paste0("differ \n excluded")]
+tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, N2:=.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, max.cve:=max(cve)]
+tune.grid[, min.cve:=min(cve), by=c("which", "nodes")]
+tune.grid[nodes==1, min.cve:=min.cve-1.2]
+tune.grid[!nodes & !differ, min.cve:=min.cve-1]
+tune.grid[!nodes & differ, min.cve:=min.cve-7.5]
+tune.grid[!nodes & !differ, pos.text2:=pos.text2+0.15]
+min.pos.text <- tune.grid[which=="hal", min(pos.text)]
+tune.grid[extent==1, extent.label:="extent included"]
+tune.grid[extent==0, extent.label:="extent excluded"]
+ggplot(tune.grid) +
+    theme_bw(base_size=25) +
+    geom_point(data=tune.grid[which=="cox"],
+               aes(x=xnum, y=cve, col=differ, shape=extent.label), size=3) +
+    #labs(shape="") + 
+    scale_shape_manual("", values=c(1, 2, 5, 6, 9, 8)) +
+    #scale_shape_manual("", values=c(1, 2), labels=c("extent excluded",
+    #                                                "extent included")) +
+    geom_point(data=tune.grid[which=="hal"],
+               aes(x=xnum, y=cve, shape=lab.text), size=3) +
+    geom_line(data=tune.grid[which=="hal"],
+              aes(x=xnum, y=cve, group=factor(cut.two.way))) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=pos.text-0.5, y=max.cve+3, label=lab.text)) +
+    geom_label(data=tune.grid[idN2==1 & which=="cox"],
+               aes(x=pos.text2, y=min.cve-3, label=lab.text2)) +
+    #geom_label(data=tune.grid[idN==1 & which=="hal"],
+    #           aes(x=xnum-1, y=cve, label=lab.text)) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=pos.text+min.pos.text-0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & nodes],
+               aes(xintercept=xnum+0.4),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & !nodes],
+               aes(xintercept=xnum+1),
+               linetype="dashed", alpha=0.4) +
+    scale_color_manual(values=c("gray13", "gray56"), guide="none") + 
+    xlab("cut.one.way") + ylab("CVE") + 
+    geom_label(data=tune.grid[idN==1 & which=="hal"],
+               aes(x=pos.text, y=max.cve+8, label="     HAL estimators     "), size=8, 
+               fill="gray90", label.size=0.25) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=mean(pos.text)-0.1, y=mean(max.cve+8), label="              Cox models               "), 
+               size=8, fill="gray90", label.size=0.25) +
+    theme(axis.title.x=element_text(size=16, hjust=0.2),
+          axis.text=element_text(size=12),
+          legend.position=c(.545,.235),
+          legend.text=element_text(size=12), 
+          legend.background=element_rect(fill='transparent')) + 
+    scale_x_continuous(breaks=tune.grid[which=="hal"]$xnum, 
+                       labels=tune.grid[which=="hal"]$cut.one.way) 
+
+#+END_SRC    
+
+
 
 
 *** Target parameters evaluated at fixed time-point 
@@ -966,6 +1157,8 @@ fit.colon.surv.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
             output.km=TRUE, 
             tau=3*365.25)}) 
 names(fit.colon.surv.3yrs) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.colon.surv.3yrs,
+        file=paste0(path.to.file, "/output/", "fit.colon.surv.3yrs", ".rds"))
 #+END_SRC    
 
 Treatment-specific survival probabilities: 
@@ -980,7 +1173,6 @@ Treatment-specific survival probabilities:
 }))) 
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 10:24:29> 954eea7f55e8d0ffb0add4d535dea9351b239433]:
 :                 Lev    Lev+5FU        Obs
 : tmle.est 0.36305673 0.25236697 0.33642019
 : tmle.se  0.02658146 0.02523538 0.02552276
@@ -1003,7 +1195,6 @@ rbind(est=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"],
       ci.upr=fit.tmle["tmle.est", "Lev+5FU"]-fit.tmle["tmle.est", "Obs"]+1.96*sqrt(fit.tmle["tmle.se", "Lev+5FU"]^2+fit.tmle["tmle.se", "Obs"]^2)) 
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 10:24:56> 89a805b93860fa303754a00fa7a1b3e00513bb0b]:
 #+begin_example
 Lev versus Obs:
  
@@ -1025,13 +1216,13 @@ ci.upr -0.01370490
 
 
 
-#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-survival-fixed.pdf" :exports none  :session *R* :width 12 :height 2.8 :cache yes
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-survival-fixed.pdf" :exports none  :session *R* :width 8 :height 2.8 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
 
 pdat <- data.table(t(do.call("cbind", lapply(1:length(fit.colon.surv.3yrs), function(jj) {
     fit.jj <- fit.colon.surv.3yrs[[jj]] 
     out.jj <- fit.jj$tmle
-    colnames(out.jj) <- names(fit.colon.surv.3yrs)[jj] 
+    colnames(out.jj) <- names(fit.colon.surv.3yrs)[jj]  
     return(out.jj) 
 }))))
 
@@ -1040,6 +1231,8 @@ pdat[, which:=names(fit.colon.surv.3yrs)]
 pdat[, ci.lwr:=tmle.est-1.96*tmle.se]
 pdat[, ci.upr:=tmle.est+1.96*tmle.se]
 pdat[, no:=1:.N]
+
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
 
 ggplot(pdat) + 
     theme_bw(base_size=25) +     
@@ -1062,12 +1255,9 @@ ggplot(pdat) +
     ggtitle("Treatment-specific survival probabilities")
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 10:28:10> 79906a658d451ee89559d6f2936b3f778c56b37f]:
-[[file:./figures/fig-tmle-results-colon-survival-fixed.pdf]]
 
-
-#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-survival-fixed.pdf" :exports none  :session *R* :width 12 :height 2.5 :cache yes
-setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-survival-fixed.pdf" :exports none  :session *R* :width 8 :height 2.5 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")    
 
 pdat <- data.table(which=c("Lev vs Obs", "Lev+5FU vs Obs"),  
                    tmle.est=sapply(c("Lev", "Lev+5FU"), function(xx) fit.colon.surv.3yrs[[xx]]$tmle["tmle.est",] -  
@@ -1076,9 +1266,11 @@ pdat <- data.table(which=c("Lev vs Obs", "Lev+5FU vs Obs"),
                                                                          fit.colon.surv.3yrs[["Obs"]]$tmle["tmle.se",]^2)))
 
 pdat[, tmle.est:=-tmle.est]
-pdat[, ci.lwr:=tmle.est-1.96*tmle.se] 
+pdat[, ci.lwr:=tmle.est-1.96*tmle.se]  
 pdat[, ci.upr:=tmle.est+1.96*tmle.se]
 pdat[, no:=1:.N]
+
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
 
 ggplot(pdat) + 
     theme_bw(base_size=25) +     
@@ -1102,19 +1294,15 @@ ggplot(pdat) +
     ggtitle("Average treatment effects") 
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 10:29:10> 571f6a7908080d752b2c10667246960a81b4827e]:
-[[file:./figures/fig-tmle-results-ate-colon-survival-fixed.pdf]]
-
 
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Target parameters evaluated at multiple time-points 
 
-
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
-fit.colon.surv.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+#+BEGIN_SRC R :exports none  :results none  :session *R* :cache yes 
+fit.colon.surv.50 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
     contmle(colon.surv, 
             estimation=list("outcome"=list(fit="cox.hal.sl",
                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
@@ -1129,128 +1317,301 @@ fit.colon.surv.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
             cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
             verbose.hal=TRUE, 
             verbose=TRUE,
+            weighted.norm="Sigma", 
             simultaneous.ci=TRUE,
             output.km=TRUE, 
-            tau=(1:10)/2*365.25)}) 
-names(fit.colon.surv.10) <- c("Lev", "Lev+5FU", "Obs")
+            tau=(1:50)/(5*2)*365.25)}) 
+names(fit.colon.surv.50) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.colon.surv.50,
+        file=paste0(path.to.file, "/output/", "fit.colon.surv.50", "-Sigma", ".rds"))
+#+END_SRC    
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.colon.surv.30 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.surv, 
+            estimation=list("outcome"=list(fit="cox.hal.sl",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="sl",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,   
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            verbose=TRUE,
+            weighted.norm="Sigma", 
+            simultaneous.ci=TRUE,
+            output.km=TRUE, 
+            tau=(1:30)/(3*2)*365.25)}) 
+names(fit.colon.surv.30) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.colon.surv.30,
+        file=paste0(path.to.file, "/output/", "fit.colon.surv.30", "-Sigma", ".rds"))
 #+END_SRC    
 
 Look at the output from the function call: 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-fit.colon.surv.10    
+fit.colon.surv.30    
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 13:38:10> b820a814a5c7ec0ca2ec8c7800134f2a53759061]:
 #+begin_example
 $Lev
 $Lev$init
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375  tau=1461 tau=1643.625
-init.est  0.02811661 0.09191717  0.15965864 0.24411526  0.30321037  0.35227630   0.40201891 0.4321129   0.44645994
-init.se   0.01096702 0.01752515  0.02084436 0.02416896  0.02546944  0.02659269   0.02700035 0.0274059   0.02748317
-         tau=1826.25
-init.est   0.4691711
-init.se    0.0275061
+          tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+init.est 0.006101782 0.009762026  0.02811661 0.04531816  0.06741160 0.09191717  0.11647506 0.14603331  0.15965864
+init.se  0.005100677 0.005848536  0.01096702 0.01432450  0.01510946 0.01752515  0.01895422 0.02033914  0.02084436
+         tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125   tau=974 tau=1034.875 tau=1095.75
+init.est 0.18955425  0.21192242 0.24411526  0.26507495 0.28108877  0.30321037 0.3290493   0.34128400  0.35227630
+init.se  0.02203085  0.02299912 0.02416896  0.02467619 0.02495078  0.02546944 0.0260549   0.02626931  0.02659269
+         tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125  tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+init.est   0.37053525 0.38991932   0.40201891  0.41532400   0.42253442 0.4321129   0.43809426   0.4428795   0.44645994
+init.se    0.02677801 0.02704219   0.02700035  0.02735187   0.02735494 0.0274059   0.02737407   0.0274811   0.02748317
+         tau=1704.5 tau=1765.375 tau=1826.25
+init.est 0.45360578   0.45838172   0.4691711
+init.se  0.02757524   0.02753867   0.0275061
 
 $Lev$km
-       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-km.est  0.03401361 0.09863946  0.15986395 0.24489796  0.30272109   0.3673469   0.41836735 0.43537415    0.4421976
-km.se   0.01057154 0.01739005  0.02137354 0.02507967  0.02679483   0.0281156   0.02876932 0.02891599    0.0289663
-       tau=1826.25
-km.est  0.45246391
-km.se   0.02903328
+        tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+km.est 0.006802721 0.010204082  0.03401361 0.05782313  0.06462585 0.09863946   0.1224490 0.14625850  0.15986395
+km.se  0.004793861 0.005861194  0.01057154 0.01361267  0.01433911 0.01739005   0.0191179 0.02060868  0.02137354
+       tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125   tau=974 tau=1034.875 tau=1095.75
+km.est  0.1870748  0.21088435 0.24489796  0.26870748 0.28231293  0.30272109 0.3367347   0.35034014   0.3673469
+km.se   0.0227436  0.02379134 0.02507967  0.02585305 0.02625181  0.02679483 0.0275622   0.02782366   0.0281156
+       tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125   tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+km.est   0.39115646 0.41156463   0.41836735  0.42517007    0.4285714 0.43537415   0.43877551   0.4421976    0.4421976
+km.se    0.02846128 0.02870085   0.02876932  0.02883217    0.0288615 0.02891599   0.02894115   0.0289663    0.0289663
+       tau=1704.5 tau=1765.375 tau=1826.25
+km.est 0.44561971   0.44904181  0.45246391
+km.se  0.02899003   0.02901235  0.02903328
 
 $Lev$tmle
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est  0.03439786  0.1003093  0.16163656 0.24463774  0.30280373  0.36187131   0.40799872 0.42832787    0.4368885
-tmle.se   0.01094102  0.0174839  0.02082176 0.02414726  0.02544603  0.02654685   0.02696211 0.02738057    0.0274547
-         tau=1826.25
-tmle.est  0.45133340
-tmle.se   0.02744894
+          tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+tmle.est 0.007266477 0.010203087  0.03553981 0.06101284  0.06890687 0.10077904  0.12365443 0.14714319  0.15995964
+tmle.se  0.005099142 0.005848294  0.01092719 0.01427603  0.01507930 0.01742691  0.01883535 0.02021347  0.02069071
+         tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125    tau=974 tau=1034.875 tau=1095.75
+tmle.est  0.1866787  0.20962727 0.24349099  0.26492170 0.27841635  0.29777806 0.32935766   0.34270769  0.36025804
+tmle.se   0.0218595  0.02284774 0.02396786  0.02446088 0.02470294  0.02525032 0.02581877   0.02602771  0.02635371
+         tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125   tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+tmle.est   0.38125963 0.40060618    0.4071293  0.41731082   0.42024919 0.42688203   0.42998215  0.43401684   0.43401684
+tmle.se    0.02652599 0.02682005    0.0267559  0.02718766   0.02719425 0.02724841   0.02719964  0.02733091   0.02733091
+         tau=1704.5 tau=1765.375 tau=1826.25
+tmle.est 0.43744338   0.44059084  0.44403557
+tmle.se  0.02743244   0.02737481  0.02730043
 
 $Lev$convergenced.at.step
-[1] 33
+[1] 7
 
 $Lev$q.max.95
      95% 
-2.309052 
+2.524604 
 
 
 $`Lev+5FU`
 $`Lev+5FU`$init
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est  0.02001412 0.06625443  0.11668424 0.18165640  0.22863572  0.26868020   0.31031764 0.33605310    0.3484747
-init.se   0.01090591 0.01657955  0.01927577 0.02284632  0.02446988  0.02529587   0.02655883 0.02756742    0.0279598
-         tau=1826.25
-init.est  0.36834746
-init.se   0.02813599
+          tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+init.est 0.004325087 0.006924395  0.02001412 0.03236644  0.04835471 0.06625443  0.08437224 0.10642540  0.11668424
+init.se  0.007165521 0.007742604  0.01090591 0.01084140  0.01502677 0.01657955  0.01707638 0.01877303  0.01927577
+         tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125    tau=974 tau=1034.875 tau=1095.75
+init.est 0.13940550  0.15660172 0.18165640  0.19816900 0.21089498  0.22863572 0.24960145   0.25962315  0.26868020
+init.se  0.02063912  0.02199585 0.02284632  0.02312483 0.02375451  0.02446988 0.02469647   0.02526592  0.02529587
+         tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125   tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+init.est    0.2838380 0.30008868   0.31031764  0.32164326   0.32781550 0.33605310   0.34121948  0.34536532    0.3484747
+init.se     0.0258088 0.02625253   0.02655883  0.02695369   0.02734144 0.02756742   0.02777056  0.02785631    0.0279598
+         tau=1704.5 tau=1765.375 tau=1826.25
+init.est 0.35469940   0.35887397  0.36834746
+init.se  0.02796016   0.02797365  0.02813599
 
 $`Lev+5FU`$km
-       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-km.est  0.03114187 0.08304498  0.12456747 0.19031142  0.23529412  0.25259516   0.28373702 0.31506634    0.3396537
-km.se   0.01021771 0.01623236  0.01942517 0.02309099  0.02495191  0.02555886   0.02651828 0.02733759    0.0278911
-       tau=1826.25
-km.est  0.36426047
-km.se   0.02836012
+        tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+km.est 0.013840830 0.017301038  0.03114187 0.03114187  0.06574394 0.08304498   0.0899654 0.11418685  0.12456747
+km.se  0.006872356 0.007670036  0.01021771 0.01021771  0.01457847 0.01623236   0.0168313 0.01870812  0.01942517
+       tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125    tau=974 tau=1034.875 tau=1095.75
+km.est 0.14878893  0.16955017 0.19031142   0.1972318 0.21453287  0.23529412 0.24221453   0.25259516  0.25259516
+km.se  0.02093413  0.02207277 0.02309099   0.0234064 0.02414693  0.02495191 0.02520138   0.02555886  0.02555886
+       tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125   tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+km.est   0.26297578  0.2733564   0.28373702  0.29415141   0.30458267 0.31506634   0.32560378   0.3291163    0.3396537
+km.se    0.02589702  0.0262166   0.02651828  0.02680572   0.02707767 0.02733759   0.02758566   0.0276647    0.0278911
+       tau=1704.5 tau=1765.375 tau=1826.25
+km.est 0.34667867   0.35019115  0.36426047
+km.se  0.02803325   0.02810172  0.02836012
 
 $`Lev+5FU`$tmle
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375  tau=1461 tau=1643.625
-tmle.est  0.03060517 0.08251773  0.12648676 0.19111992  0.23082586  0.25442681    0.2887010 0.3205578   0.34082942
-tmle.se   0.01084285 0.01654015  0.01924785 0.02283351  0.02446966  0.02524629    0.0264883 0.0275202   0.02795395
-         tau=1826.25
-tmle.est  0.36742568
-tmle.se   0.02814427
+         tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+tmle.est 0.01202810 0.015000638  0.03076795 0.03077521  0.06280641 0.07994872  0.08750766 0.11227545  0.12154069
+tmle.se  0.00714289 0.007724095  0.01083339 0.01083340  0.01494909 0.01657851  0.01710342 0.01868223  0.01920906
+         tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125    tau=974 tau=1034.875 tau=1095.75
+tmle.est 0.14572617  0.16785240 0.18874692  0.19642020 0.21275806  0.23176010 0.23792329   0.24952068  0.24952134
+tmle.se  0.02056695  0.02197271 0.02283711  0.02312661 0.02376735  0.02452923 0.02474302   0.02535636  0.02535636
+         tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125   tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+tmle.est    0.2620818 0.27384050   0.28529109  0.29691601   0.30722450 0.31662990   0.32668001   0.3299108    0.3384994
+tmle.se     0.0258748 0.02630819   0.02662369  0.02703585   0.02746097 0.02769462   0.02792035   0.0280044    0.0281201
+         tau=1704.5 tau=1765.375 tau=1826.25
+tmle.est 0.34588514    0.3491323  0.36362369
+tmle.se  0.02807853    0.0280859  0.02823879
 
 $`Lev+5FU`$convergenced.at.step
-[1] 39
+[1] 10
 
 $`Lev+5FU`$q.max.95
      95% 
-2.317683 
+2.492932 
 
 
 $Obs
 $Obs$init
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est 0.029302193 0.09561799  0.16575611 0.25278814  0.31340014  0.36353875   0.41418847 0.44473980   0.45927980
-init.se  0.006866511 0.01484047  0.01969303 0.02272439  0.02441296  0.02558631   0.02645427 0.02687773   0.02697966
-         tau=1826.25
-init.est  0.48226275
-init.se   0.02720205
+           tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+init.est 0.0063630200 0.010178925 0.029302193 0.04720600  0.07017542 0.09561799  0.12107788 0.15167191  0.16575611
+init.se  0.0003886119 0.003150977 0.006866511 0.01046931  0.01288671 0.01484047  0.01719615 0.01906838  0.01969303
+         tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125    tau=974 tau=1034.875 tau=1095.75
+init.est 0.19661679  0.21966899 0.25278814  0.27431336 0.29073898  0.31340014 0.33982551   0.35232124  0.36353875
+init.se  0.02083812  0.02145004 0.02272439  0.02368569 0.02401971  0.02441296 0.02501987   0.02522116  0.02558631
+         tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125   tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+init.est    0.3821522  0.4018854   0.41418847  0.42770442   0.43502338 0.44473980   0.45080357  0.45565273   0.45927980
+init.se     0.0259554  0.0264067   0.02645427  0.02671092   0.02684486 0.02687773   0.02690295  0.02697275   0.02697966
+         tau=1704.5 tau=1765.375 tau=1826.25
+init.est 0.46651564   0.47134944  0.48226275
+init.se  0.02704678   0.02704475  0.02720205
 
 $Obs$km
-       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-km.est 0.016393443 0.07540984  0.15751213 0.23649536  0.29573279  0.34838829   0.40433475 0.44053540   0.45040830
-km.se  0.007271029 0.01511954  0.02086899 0.02435665  0.02616458  0.02731988   0.02814289 0.02847059   0.02853308
-       tau=1826.25
-km.est  0.48006894
-km.se   0.02865511
+       tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+km.est          0 0.003278689 0.016393443 0.03934426  0.05901639 0.07540984  0.11147541 0.14434825  0.15751213
+km.se           0 0.003273309 0.007271029 0.01113204  0.01349359 0.01511954  0.01802081 0.02013038  0.02086899
+       tau=608.75 tau=669.625  tau=730.5 tau=791.375 tau=852.25 tau=913.125    tau=974 tau=1034.875 tau=1095.75
+km.est 0.18713084  0.20358568 0.23649536   0.2628231 0.27598698  0.29573279 0.32535151   0.33522441  0.34838829
+km.se  0.02234902  0.02307634 0.02435665   0.0252328 0.02562629  0.02616458 0.02686241   0.02706732  0.02731988
+       tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125   tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+km.est   0.36484313 0.38787990   0.40433475  0.42408056   0.43066249 0.44053540   0.44382636  0.45040830   0.45040830
+km.se    0.02760327 0.02794166   0.02814289  0.02834098   0.02839666 0.02847059   0.02849268  0.02853308   0.02853308
+       tau=1704.5 tau=1765.375 tau=1826.25
+km.est  0.4602812    0.4668631  0.48006894
+km.se   0.0285842    0.0286120  0.02865511
 
 $Obs$tmle
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est  0.01610580 0.07403807  0.15216973 0.22676626  0.28504701  0.33667864   0.39413854 0.42994478   0.44302666
-tmle.se   0.00683859 0.01482758  0.01969732 0.02268265  0.02436701  0.02553621   0.02643239 0.02687148   0.02696469
-         tau=1826.25
-tmle.est  0.47112545
-tmle.se   0.02720013
+           tau=60.875  tau=121.75 tau=182.625  tau=243.5 tau=304.375 tau=365.25 tau=426.125    tau=487 tau=547.875
+tmle.est 1.212744e-17 0.003164284 0.015336741 0.03744137  0.05682111 0.07401839  0.10847734 0.14003734  0.15273107
+tmle.se  4.564701e-18 0.003134679 0.006833998 0.01045176  0.01286085 0.01480593  0.01715919 0.01902247  0.01963677
+         tau=608.75 tau=669.625 tau=730.5 tau=791.375 tau=852.25 tau=913.125    tau=974 tau=1034.875 tau=1095.75
+tmle.est 0.18084042  0.19541794 0.2268910  0.25327566 0.26678326  0.28556673 0.31368404   0.32310381  0.33696255
+tmle.se  0.02074923  0.02134433 0.0226149  0.02360619 0.02391539  0.02427126 0.02487292   0.02506088  0.02546004
+         tau=1156.625 tau=1217.5 tau=1278.375 tau=1339.25 tau=1400.125  tau=1461 tau=1521.875 tau=1582.75 tau=1643.625
+tmle.est   0.35419011  0.3784379    0.3940699  0.41492001   0.42145365 0.4314914   0.43473820  0.44166576   0.44166576
+tmle.se    0.02583973  0.0263364    0.0263634  0.02664916   0.02679688 0.0268183   0.02683841  0.02691896   0.02691896
+         tau=1704.5 tau=1765.375 tau=1826.25
+tmle.est 0.45207716   0.45793259  0.47201261
+tmle.se  0.02699812   0.02698987  0.02717358
 
 $Obs$convergenced.at.step
-[1] 74
+[1] 8
 
 $Obs$q.max.95
      95% 
-2.345336
+2.568266
 #+end_example
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.colon.surv.iterative.50 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.surv, 
+            estimation=list("outcome"=list(fit="cox.hal.sl",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="sl",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,   
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            iterative=TRUE,
+            output.km=TRUE, output.ee=TRUE, 
+            tau=(1:50)/(5*2)*365.25)}) 
+names(fit.colon.surv.iterative.50) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.colon.surv.iterative.50,
+        file=paste0(path.to.file, "/output/", "fit.colon.surv.50", "-iterative", ".rds"))
+#+END_SRC    
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+check.monotone <- do.call("rbind", lapply(1:length(fit.colon.surv.iterative.50), function(jj) {
+    fit.jj <- fit.colon.surv.iterative.50[[jj]]
+    out.jj <- t(fit.jj$tmle) 
+    return(data.table(out.jj, which=names(fit.colon.surv.iterative.50)[jj], time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+check.monotone[, diff:=diff(c(0,tmle.est)), by=which]
+check.monotone[diff<0] 
+#+END_SRC    
+
+#+begin_example
+ 
+            tmle.est            tmle.se which     time                diff
+ 1: 0.429853761293166 0.0274042876813724   Lev 1497.525 -0.0000289712240461
+ 2: 0.436917112674670 0.0274775035815274   Lev 1607.100 -0.0000173033928114
+ 3: 0.436874701782329 0.0274761623954313   Lev 1643.625 -0.0000424108923415
+ 4: 0.443300907572835 0.0275189259777731   Lev 1753.200 -0.0000897707783220
+ 5: 0.446409107974176 0.0274631029206613   Lev 1826.250 -0.0001964259722576
+ 6: 0.000000006871145 0.0000000007378397   Obs   73.050 -0.0000000008573657
+ 7: 0.000000005766241 0.0000000006434194   Obs  109.575 -0.0000000011049042
+ 8: 0.421308326187093 0.0268258321643754   Obs 1424.475 -0.0001410404809641
+ 9: 0.441525350772389 0.0269548108142467   Obs 1607.100 -0.0000422683431834
+10: 0.441432896377600 0.0269536562228939   Obs 1643.625 -0.0000924543947891
+#+end_example
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+check.monotone <- do.call("rbind", lapply(1:length(fit.colon.surv.iterative.50), function(jj) {
+    fit.jj <- fit.colon.surv.iterative.50[[jj]]
+    out.jj <- t(fit.jj$ee) 
+    return(data.table(out.jj, which=names(fit.colon.surv.iterative.50)[jj], time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+check.monotone[, diff:=diff(c(0,ee.est)), by=which]
+check.monotone[diff<0]  
+#+END_SRC    
+
+#+begin_example
+ 
+      ee.est      ee.se   which     time             diff
+ 1: 0.4203540 0.02734683     Lev 1387.950 -0.0000168700225
+ 2: 0.4298671 0.02740596     Lev 1497.525 -0.0000171453550
+ 3: 0.4369452 0.02748160     Lev 1607.100 -0.0000060395264
+ 4: 0.4369331 0.02748317     Lev 1643.625 -0.0000121358970
+ 5: 0.4434427 0.02753867     Lev 1753.200 -0.0000186171679
+ 6: 0.4467549 0.02750610     Lev 1826.250 -0.0000461483690
+ 7: 0.2517751 0.02528099 Lev+5FU 1059.225 -0.0000057658421
+ 8: 0.2517717 0.02529587 Lev+5FU 1095.750 -0.0000034836950
+ 9: 0.2517661 0.02532295 Lev+5FU 1132.275 -0.0000055024833
+10: 0.2978114 0.02695369 Lev+5FU 1351.425 -0.0000001621608
+11: 0.3500704 0.02796207 Lev+5FU 1716.675 -0.0000025898928
+#+end_example
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+check.monotone <- do.call("rbind", lapply(1:length(fit.colon.surv.50), function(jj) {
+    fit.jj <- fit.colon.surv.50[[jj]]
+    out.jj <- t(fit.jj$tmle) 
+    return(data.table(out.jj, which=names(fit.colon.surv.50)[jj], time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+check.monotone[, diff:=diff(c(0,tmle.est)), by=which]
+check.monotone[diff<0]  
+#+END_SRC    
+
+: Empty data.table (0 rows and 5 cols): tmle.est,tmle.se,which,time,diff
 
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-survival-one-step.pdf" :exports none  :session *R* :width 12 :height 4.5 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
 
-pdat <- do.call("rbind", lapply(1:length(fit.colon.surv.10), function(jj) {
-    fit.jj <- fit.colon.surv.10[[jj]]
+pdat <- do.call("rbind", lapply(1:length(fit.colon.surv.50), function(jj) {
+    fit.jj <- fit.colon.surv.50[[jj]]
     out.jj <- t(fit.jj$tmle)
-    return(data.table(out.jj, which=names(fit.colon.surv.10)[jj], 
+    return(data.table(out.jj, which=names(fit.colon.surv.50)[jj], 
                       q.95=fit.jj$q.max.95, 
                       time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
 }))
@@ -1259,40 +1620,36 @@ pdat[, tmle.est:=1-tmle.est]
 pdat[, ci.lwr:=tmle.est-q.95*tmle.se] 
 pdat[, ci.upr:=tmle.est+q.95*tmle.se]
 
-ggplot(pdat) + 
+pdat[, time:=time/365.25]
+
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
+
+ggplot(pdat) +  
     theme_bw(base_size=25) +     
-    theme(#legend.position="bottom", 
-        axis.title.y=element_text(angle=90, size=20), 
-        axis.title.x=element_text(size=20),
-        legend.key.size=unit(3,"line"), 
-        panel.grid.major=element_blank(), 
-        panel.grid.minor=element_blank(), 
-        plot.title=element_text(size=18)) + 
+    theme(axis.title.y=element_text(angle=90, size=20), 
+          axis.title.x=element_text(size=20),
+          legend.key.size=unit(3,"line"), 
+          panel.grid.major=element_blank(), 
+          panel.grid.minor=element_blank(), 
+          plot.title=element_text(size=18)) + 
     ylab("TMLE estimate") +
     labs(linetype="") +  
-    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
-    #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
-    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
-    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
-    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
-    geom_point(aes(x=time, y=tmle.est), size=1) + 
-    #scale_y_continuous("", unique(pdat$no),  
-    #                   limits=c(0.5,3.5), 
-    #                   labels=unique(pdat$which)) +  
-    xlab("time") +  
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which, linetype=which), 
+                col="gray60", fill="grey80", alpha=0.4, size=0.7) +  
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.7) + 
+    geom_point(aes(x=time, y=tmle.est), size=0.5) + 
+    xlab("time (years)") +  
     ggtitle("Treatment-specific survival probabilities")
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 13:40:32> 896d510f07919e9237ef2c10296997541e96787e]:
-[[file:./figures/fig-tmle-results-colon-survival-one-step.pdf]]
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-survival-one-step.pdf" :exports none  :session *R* :width 12 :height 4 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
 
-pdat <- do.call("rbind", lapply(1:length(fit.colon.surv.10), function(jj) {
-    fit.jj <- fit.colon.surv.10[[jj]]
+pdat <- do.call("rbind", lapply(1:length(fit.colon.surv.50), function(jj) {
+    fit.jj <- fit.colon.surv.50[[jj]] 
     out.jj <- t(fit.jj$tmle)
-    return(data.table(out.jj, which=names(fit.colon.surv.10)[jj],
+    return(data.table(out.jj, which=names(fit.colon.surv.50)[jj],
                       q.95=fit.jj$q.max.95, 
                       time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
 }))
@@ -1310,35 +1667,80 @@ pdat[, ci.lwr:=tmle.est-q.95*tmle.se]
 pdat[, ci.upr:=tmle.est+q.95*tmle.se]
 pdat[, which:=which.x]
 
+pdat[, time:=time/365.25]
+
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
+
 ggplot(pdat) + 
     theme_bw(base_size=25) +      
-    theme(#legend.position="bottom", 
-        axis.title.y=element_text(angle=90, size=20), 
-        axis.title.x=element_text(size=20),
-        legend.key.size=unit(3,"line"), 
-        panel.grid.major=element_blank(), 
-        panel.grid.minor=element_blank(), 
-        plot.title=element_text(size=18)) + 
+    theme(axis.title.y=element_text(angle=90, size=20), 
+          axis.title.x=element_text(size=20),
+          legend.key.size=unit(3,"line"), 
+          panel.grid.major=element_blank(), 
+          panel.grid.minor=element_blank(), 
+          plot.title=element_text(size=18)) + 
     ylab("TMLE estimate") +
     labs(linetype="") +  
-    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
-    #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
-    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
-    #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
-    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
-    geom_point(aes(x=time, y=tmle.est), size=1) + 
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which, linetype=which), 
+                col="gray60", fill="grey80", alpha=0.4, size=0.7) +  
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.7) + 
+    geom_point(aes(x=time, y=tmle.est), size=0.5) + 
     geom_hline(aes(yintercept=0), alpha=0.6, linetype="dotted") +  
-    xlab("TMLE estimate") +  
+    xlab("time (years)") +  
     ggtitle("Average treatment effects")
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 13:44:50> 482a08027737def35b31c47477b9f95da3e50f64]:
-[[file:./figures/fig-tmle-results-ate-colon-survival-one-step.pdf]]
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-survival-estimating-equation.pdf" :exports none  :session *R* :width 12 :height 4.5 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
+
+pdat <- do.call("rbind", lapply(1:length(fit.colon.surv.iterative.50), function(jj) {
+    fit.jj <- fit.colon.surv.iterative.50[[jj]]
+    out.jj <- t(fit.jj$ee)
+    return(data.table(out.jj, which=names(fit.colon.surv.iterative.50)[jj], 
+                      q.95=fit.jj$q.max.95, 
+                      time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
+}))
+
+pdat[, ee.est:=1-ee.est]
+pdat[, q.95:=1.96]
+pdat[, ci.lwr:=ee.est-q.95*ee.se] 
+pdat[, ci.upr:=ee.est+q.95*ee.se]
+
+pdat[, time:=time/365.25]
+
+pdat[, diff:=diff(c(0,ee.est)), by=which]
+pdat[, monotone:=diff<=0]
+
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
+#pdat[diff>0]
+
+ggplot(pdat) + #[which=="Lev+5FU"]) +  
+    #xlim(2.8, 3.2) + ylim(0.748, 0.7485) + 
+    theme_bw(base_size=25) +     
+    theme(axis.title.y=element_text(angle=90, size=20), 
+          axis.title.x=element_text(size=20),
+          legend.key.size=unit(3,"line"), 
+          panel.grid.major=element_blank(), 
+          panel.grid.minor=element_blank(), 
+          plot.title=element_text(size=18)) + 
+    ylab("TMLE estimate") +
+    labs(linetype="") +  
+    #geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which, linetype=which), 
+    #            col="gray60", fill="grey80", alpha=0.4, size=0.7) +  
+    geom_line(aes(x=time, y=ee.est, linetype=which), size=0.7) + 
+    geom_point(aes(x=time, y=ee.est, shape=monotone, size=1-monotone)) + 
+    guides(size=FALSE, shape=FALSE) + 
+    scale_shape_manual("", values=c(8, 16)) +
+    xlab("time (years)") +  
+    ggtitle("Treatment-specific survival probabilities")
+#+END_SRC    
 
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 ** Analysis of the =colon= competing risks data
+
 
 
 *** Cox models for Cox super learner 
@@ -1347,7 +1749,7 @@ ggplot(pdat) +
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none :session *R* :cache yes
 sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
-               "differ", "adhere", "extent", "surg", #"nodes.squared",
+               "differ", "adhere", "extent", "surg",
                "rx*age", "rx*sex", "rx*perfor")
 sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
 names(sl.models.grid) <- sl.models
@@ -1366,7 +1768,7 @@ names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports none :results none :session *R* :cache yes
 sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
-               "differ", "adhere", "extent", "surg", #"nodes.squared",
+               "differ", "adhere", "extent", "surg",
                "rx*age", "rx*sex", "rx*perfor")
 sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
 names(sl.models.grid) <- sl.models
@@ -1400,12 +1802,348 @@ cox.hal.sl.F1.Lev5FU.3yrs <-
             V=10,
             target=1,  
             tau=3*365.25)
+cox.hal.sl.F2.Lev5FU.3yrs <-  
+    contmle(colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox.hal.sl",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",  
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            output.tune.grid=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            V=10,
+            target=1,  
+            tau=3*365.25)
+cox.hal.sl.cens.Lev5FU.3yrs <-  
+    contmle(colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox.hal.sl",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",  
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            output.tune.grid=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            V=10,
+            target=1,  
+            tau=3*365.25)
 #+END_SRC
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-colon-cr-initial-estimation-cause1.pdf" :exports none  :session *R* :width 10 :height 6 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")             
+
+tune.grid <- copy(cox.hal.sl.F1.Lev5FU.3yrs)   
+
+tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes:=0]
+tune.grid[which=="cox", differ:=unlist(lapply(sl.models, function(x) "differ"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", differ:=0]
+tune.grid[which=="cox", extent:=unlist(lapply(sl.models, function(x) "extent"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", extent:=0]
+tune.grid[which!="cox", table(extent, nodes)]
+#tune.grid[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+#tune.grid[which!="cox", nodes.squared:=0]
+setorder(tune.grid, which, nodes, differ)
+tune.grid[, xnum:=as.numeric(1:.N), by=c("which", "cut.two.way")] 
+max.xnum.hal <- tune.grid[which=="hal", max(xnum)]
+tune.grid[which=="cox", xnum:=xnum/20+max.xnum.hal+2]
+tune.grid[which=="cox" & !nodes & differ, xnum:=xnum+1]
+tune.grid[which=="cox" & nodes, xnum:=xnum+3]
+tune.grid[which=="cox" & nodes & differ, xnum:=xnum+1]
+tune.grid[, pos.text:=mean(xnum), by=c("which", "cut.two.way", "nodes")]
+tune.grid[, pos.text2:=mean(xnum), by=c("which", "cut.two.way", "nodes", "differ")]
+tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
+#lapply(sl.models, function(x) gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]]))
+tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
+tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
+tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("L[3]~included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~excluded")]
+tune.grid[which=="cox" & differ, lab.text2:=paste0("L[6]~\n included")]
+tune.grid[which=="cox" & !differ, lab.text2:=paste0("L[6]~\n excluded")]
+tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, N2:=.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, max.cve:=max(cve)]
+tune.grid[, min.cve:=min(cve), by=c("which", "nodes")]
+tune.grid[!nodes & !differ, min.cve:=min.cve-0.5]
+tune.grid[!nodes & differ, min.cve:=min.cve-4]
+tune.grid[!nodes & !differ, pos.text2:=pos.text2+0.15]
+min.pos.text <- tune.grid[which=="hal", min(pos.text)]
+tune.grid[extent==1, extent.label:="L[7]~included"]
+tune.grid[extent==0, extent.label:="L[7]~excluded"]
+tune.grid[, extent.pos.y:=mean(cve), by=c("extent", "nodes", "which")]
+tune.grid[nodes==1, extent.pos.x:=min(xnum)-1.5, by=c("nodes", "which")]
+tune.grid[nodes==0, extent.pos.x:=min(xnum)+3, by=c("nodes", "which")]
+ggplot(tune.grid) +
+    theme_bw(base_size=25) +
+    geom_point(data=tune.grid[which=="cox" & extent==0],
+               aes(x=xnum, y=cve, col=differ## , shape=extent.label
+                   ), shape=9, size=3) +
+    geom_point(data=tune.grid[which=="cox" & extent==1],
+               aes(x=xnum, y=cve, col=differ## , shape=extent.label
+                   ), shape=8, size=3) +
+    #labs(shape="") + 
+    scale_shape_manual("", values=c(1, 2, 5, 6, 9, 8)## , 
+                       ## labels=expression("cut.two.way=0", "cut.two.way=10", "cut.two.way=15",
+                       ##                   "cut.two.way=5", L[7]~"excluded", L[7]~"included")
+                       ) +
+    #scale_shape_manual("", values=c(1, 2), labels=c("L[7]~excluded",
+    #                                                "L[7]~included")) +
+    geom_point(data=tune.grid[which=="hal"],
+               aes(x=xnum, y=cve, shape=lab.text), size=3) +
+    geom_line(data=tune.grid[which=="hal"],
+              aes(x=xnum, y=cve, group=factor(cut.two.way))) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=pos.text-0.5, y=max.cve+3, label=lab.text), parse=TRUE) +
+    geom_label(data=tune.grid[idN2==1 & which=="cox"],
+               aes(x=pos.text2, y=min.cve-3, label=lab.text2), parse=TRUE) +
+    #geom_label(data=tune.grid[idN==1 & which=="hal"],
+    #           aes(x=xnum-1, y=cve, label=lab.text)) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=pos.text+min.pos.text-0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & nodes],
+               aes(xintercept=xnum+0.4),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & !nodes],
+               aes(xintercept=xnum+1),
+               linetype="dashed", alpha=0.4) +
+    scale_color_manual(values=c("gray13", "gray56"), guide="none") + 
+    xlab("cut.one.way") + ylab("cross-validated error") + 
+    geom_label(data=tune.grid[idN==1 & which=="hal"],
+               aes(x=pos.text, y=max.cve+8, label="     HAL estimators     "), size=8, 
+               fill="gray90", label.size=0.25) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=mean(pos.text)-0.1, y=mean(max.cve+8), label="              Cox models               "), 
+               size=8, fill="gray90", label.size=0.25) +
+    geom_label(data=tune.grid[which=="cox" & nodes==1],
+               aes(x=extent.pos.x, y=extent.pos.y, label=extent.label), parse=TRUE) +
+    geom_label(data=tune.grid[which=="cox" & nodes==0],
+               aes(x=extent.pos.x-1, y=extent.pos.y, label=extent.label), hjust=0, parse=TRUE) +
+    theme(axis.title.x=element_text(size=16, hjust=0.2),
+          axis.text=element_text(size=12),
+          legend.position=c(.145,.475),
+          legend.text=element_text(size=12), 
+          legend.background=element_rect(fill='transparent')) + 
+    scale_x_continuous(breaks=tune.grid[which=="hal"]$xnum, 
+                       labels=tune.grid[which=="hal"]$cut.one.way) 
+
+#+END_SRC    
+
+
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-colon-cr-initial-estimation-cause2.pdf" :exports none  :session *R* :width 10 :height 6 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")             
+
+tune.grid <- copy(cox.hal.sl.F2.Lev5FU.3yrs)   
+
+tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes:=0]
+tune.grid[which=="cox", differ:=unlist(lapply(sl.models, function(x) "differ"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", differ:=0]
+tune.grid[which=="cox", extent:=unlist(lapply(sl.models, function(x) "extent"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", extent:=0]
+tune.grid[which!="cox", table(extent, nodes)]
+#tune.grid[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+#tune.grid[which!="cox", nodes.squared:=0]
+setorder(tune.grid, which, nodes, differ)
+tune.grid[, xnum:=as.numeric(1:.N), by=c("which", "cut.two.way")] 
+max.xnum.hal <- tune.grid[which=="hal", max(xnum)]
+tune.grid[which=="cox", xnum:=xnum/20+max.xnum.hal+2]
+tune.grid[which=="cox" & !nodes & differ, xnum:=xnum+1]
+tune.grid[which=="cox" & nodes, xnum:=xnum+3]
+tune.grid[which=="cox" & nodes & differ, xnum:=xnum+1]
+tune.grid[, pos.text:=mean(xnum), by=c("which", "cut.two.way", "nodes")]
+tune.grid[, pos.text2:=mean(xnum), by=c("which", "cut.two.way", "nodes", "differ")]
+tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
+#lapply(sl.models, function(x) gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]]))
+tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
+tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
+tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("L[3]~ included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
+tune.grid[which=="cox" & differ, lab.text2:=paste0("L[6]~\n included")]
+tune.grid[which=="cox" & !differ, lab.text2:=paste0("L[6]~\n excluded")]
+tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, N2:=.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, max.cve:=max(cve)]
+tune.grid[, min.cve:=min(cve), by=c("which", "nodes")]
+tune.grid[!nodes & !differ, min.cve:=min.cve+0.5]
+tune.grid[!nodes & differ, min.cve:=min.cve-3.75]
+tune.grid[!nodes & !differ, pos.text2:=pos.text2+0.15]
+min.pos.text <- tune.grid[which=="hal", min(pos.text)]
+tune.grid[extent==1, extent.label:="L[7]~included"]
+tune.grid[extent==0, extent.label:="L[7]~excluded"]
+ggplot(tune.grid) +
+    theme_bw(base_size=25) +
+    geom_point(data=tune.grid[which=="cox"],
+               aes(x=xnum, y=cve, col=differ, shape=extent.label), size=3) +
+    #labs(shape="") + 
+    scale_shape_manual("", values=c(1, 2, 5, 6, 9, 8)) +
+    #scale_shape_manual("", values=c(1, 2), labels=c("L[7]~excluded",
+    #                                                "L[7]~included")) +
+    geom_point(data=tune.grid[which=="hal"],
+               aes(x=xnum, y=cve, shape=lab.text), size=3) +
+    geom_line(data=tune.grid[which=="hal"],
+              aes(x=xnum, y=cve, group=factor(cut.two.way))) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=pos.text-0.5, y=max.cve+3, label=lab.text)) +
+    geom_label(data=tune.grid[idN2==1 & which=="cox"],
+               aes(x=pos.text2, y=min.cve-3, label=lab.text2)) +
+    #geom_label(data=tune.grid[idN==1 & which=="hal"],
+    #           aes(x=xnum-1, y=cve, label=lab.text)) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=pos.text+min.pos.text-0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & nodes],
+               aes(xintercept=xnum+0.4),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & !nodes],
+               aes(xintercept=xnum+1),
+               linetype="dashed", alpha=0.4) +
+    scale_color_manual(values=c("gray13", "gray56"), guide="none") + 
+    xlab("cut.one.way") + ylab("CVE") + 
+    geom_label(data=tune.grid[idN==1 & which=="hal"],
+               aes(x=pos.text, y=max.cve+6, label="     HAL estimators     "), size=8, 
+               fill="gray90", label.size=0.25) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=mean(pos.text)-0.1, y=mean(max.cve+6), label="              Cox models               "), 
+               size=8, fill="gray90", label.size=0.25) +
+    ylim(110, tune.grid[, max(max.cve)]+6) + 
+    theme(axis.title.x=element_text(size=16, hjust=0.2),
+          axis.text=element_text(size=12),
+          legend.position=c(.545,.235),
+          legend.text=element_text(size=12), 
+          legend.background=element_rect(fill='transparent')) + 
+    scale_x_continuous(breaks=tune.grid[which=="hal"]$xnum, 
+                       labels=tune.grid[which=="hal"]$cut.one.way) 
+
+#+END_SRC    
+
+
+
+#+BEGIN_SRC R :results graphics :file "./figures/fig-colon-cr-initial-estimation-cens.pdf" :exports none  :session *R* :width 10 :height 6 :cache yes
+setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")             
+
+tune.grid <- copy(cox.hal.sl.cens.Lev5FU.3yrs)   
+
+tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes:=0]
+tune.grid[which=="cox", differ:=unlist(lapply(sl.models, function(x) "differ"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", differ:=0]
+tune.grid[which=="cox", extent:=unlist(lapply(sl.models, function(x) "extent"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", extent:=0]
+tune.grid[which!="cox", table(extent, nodes)]
+#tune.grid[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+#tune.grid[which!="cox", nodes.squared:=0]
+setorder(tune.grid, which, nodes, differ)
+tune.grid[, xnum:=as.numeric(1:.N), by=c("which", "cut.two.way")] 
+max.xnum.hal <- tune.grid[which=="hal", max(xnum)]
+tune.grid[which=="cox", xnum:=xnum/20+max.xnum.hal+2]
+tune.grid[which=="cox" & !nodes & differ, xnum:=xnum+1] 
+tune.grid[which=="cox" & nodes, xnum:=xnum+3]
+tune.grid[which=="cox" & nodes & differ, xnum:=xnum+1]
+tune.grid[, pos.text:=mean(xnum), by=c("which", "cut.two.way", "nodes")]
+tune.grid[, pos.text2:=mean(xnum), by=c("which", "cut.two.way", "nodes", "differ")]
+tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
+#lapply(sl.models, function(x) gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]]))
+tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
+tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
+tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("L[3]~ included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
+tune.grid[which=="cox" & differ, lab.text2:=paste0("L[6]~\n included")]
+tune.grid[which=="cox" & !differ, lab.text2:=paste0("L[6]~\n excluded")]
+tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, N2:=.N, by=c("cut.two.way", "nodes", "differ")]
+tune.grid[, max.cve:=max(cve)]
+tune.grid[, min.cve:=min(cve), by=c("which", "nodes")]
+tune.grid[!nodes & !differ, min.cve:=min.cve-0.5]
+tune.grid[!nodes & differ, min.cve:=min.cve-6]
+tune.grid[!nodes & !differ, pos.text2:=pos.text2+0.15]
+min.pos.text <- tune.grid[which=="hal", min(pos.text)]
+tune.grid[extent==1, extent.label:="L[7]~included"]
+tune.grid[extent==0, extent.label:="L[7]~excluded"]
+ggplot(tune.grid) +
+    theme_bw(base_size=25) +
+    geom_point(data=tune.grid[which=="cox"],
+               aes(x=xnum, y=cve, col=differ, shape=extent.label), size=3) +
+    #labs(shape="") + 
+    scale_shape_manual("", values=c(1, 2, 5, 6, 9, 8)) +
+    #scale_shape_manual("", values=c(1, 2), labels=c("L[7]~excluded",
+    #                                                "L[7]~included")) +
+    geom_point(data=tune.grid[which=="hal"],
+               aes(x=xnum, y=cve, shape=lab.text), size=3) +
+    geom_line(data=tune.grid[which=="hal"],
+              aes(x=xnum, y=cve, group=factor(cut.two.way))) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=pos.text-0.5, y=max.cve+3, label=lab.text)) +
+    geom_label(data=tune.grid[idN2==1 & which=="cox"],
+               aes(x=pos.text2, y=min.cve-3, label=lab.text2)) +
+    #geom_label(data=tune.grid[idN==1 & which=="hal"],
+    #           aes(x=xnum-1, y=cve, label=lab.text)) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=pos.text+min.pos.text-0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="hal"],
+               aes(xintercept=0.5),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & nodes],
+               aes(xintercept=xnum+0.4),
+               linetype="dashed", alpha=0.4) +
+    geom_vline(data=tune.grid[which=="cox" & idN==N & !nodes],
+               aes(xintercept=xnum+1),
+               linetype="dashed", alpha=0.4) +
+    scale_color_manual(values=c("gray13", "gray56"), guide="none") + 
+    xlab("cut.one.way") + ylab("CVE") + 
+    geom_label(data=tune.grid[idN==1 & which=="hal"],
+               aes(x=pos.text, y=max.cve+6.5, label="     HAL estimators     "), size=8, 
+               fill="gray90", label.size=0.25) +
+    geom_label(data=tune.grid[idN==1 & which=="cox"],
+               aes(x=mean(pos.text)-0.1, y=mean(max.cve+6.5), label="              Cox models               "), 
+               size=8, fill="gray90", label.size=0.25) +
+    ylim(1120, tune.grid[, max(max.cve)]+6.5) + 
+    theme(axis.title.x=element_text(size=16, hjust=0.2),
+          axis.text=element_text(size=12),
+          legend.position=c(.545,.235),
+          legend.text=element_text(size=12), 
+          legend.background=element_rect(fill='transparent')) + 
+    scale_x_continuous(breaks=tune.grid[which=="hal"]$xnum, 
+                       labels=tune.grid[which=="hal"]$cut.one.way) 
+
+#+END_SRC    
+
 
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-colon-cr-initial-estimation2.pdf" :exports none  :session *R* :width 16 :height 8 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")          
- 
+
 tune.grid <- copy(cox.hal.sl.F1.Lev5FU.3yrs)   
 
 tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
@@ -1431,11 +2169,11 @@ tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
 tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
 tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
 tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
-tune.grid[which=="cox" & nodes, lab.text:=paste0("nodes included")]
-tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
-tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
-tune.grid[which=="cox" & differ, lab.text2:=paste0("differ \n included")]
-tune.grid[which=="cox" & !differ, lab.text2:=paste0("differ \n excluded")]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("L[3]~ included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
+tune.grid[which=="cox" & differ, lab.text2:=paste0("L[6]~\n included")]
+tune.grid[which=="cox" & !differ, lab.text2:=paste0("L[6]~\n excluded")]
 tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "differ")]
 tune.grid[, N2:=.N, by=c("cut.two.way", "nodes", "differ")]
 tune.grid[, max.cve:=max(cve)]
@@ -1447,8 +2185,8 @@ ggplot(tune.grid) +
     theme_bw(base_size=25) +
     geom_point(data=tune.grid[which=="cox"],
                aes(x=xnum, y=cve, col=differ, shape=extent), size=3) +
-    scale_shape_manual("", values=c(1, 2), labels=c("extent excluded",
-                                                    "extent included")) +
+    scale_shape_manual("", values=c(1, 2), labels=c("L[7]~excluded",
+                                                    "L[7]~included")) +
     geom_point(data=tune.grid[which=="hal"],
                aes(x=xnum, y=cve), size=3) +
     geom_label(data=tune.grid[idN==1 & which=="cox"],
@@ -1478,8 +2216,6 @@ ggplot(tune.grid) +
 
 #+END_SRC    
 
-#+RESULTS[<2021-11-10 09:20:52> 181d628dc3ef57bd5b19c3909540e36a8c2abb75]:
-[[file:./figures/fig-colon-cr-initial-estimation2.pdf]]
 
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-colon-cr-initial-estimation.pdf" :exports none  :session *R* :width 16 :height 8 :cache yes
@@ -1510,9 +2246,9 @@ tune.grid[, x:=factor(1:.N, levels=1:.N, labels=cut.one.way)]
 tune.grid[, idN:=1:.N, by=c("cut.two.way", "nodes")]
 tune.grid[, N:=.N, by=c("cut.two.way", "nodes")]
 tune.grid[which=="hal", lab.text:=paste0("cut.two.way=", cut.two.way)]
-tune.grid[which=="cox" & nodes, lab.text:=paste0("nodes included")]
-tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
-tune.grid[which=="cox" & !nodes, lab.text:=paste0("nodes excluded")]
+tune.grid[which=="cox" & nodes, lab.text:=paste0("L[3]~ included")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
+tune.grid[which=="cox" & !nodes, lab.text:=paste0("L[3]~ excluded")]
 tune.grid[which=="cox" & perfor, lab.text2:=paste0("perfor \n included")]
 tune.grid[which=="cox" & !perfor, lab.text2:=paste0("perfor \n excluded")]
 tune.grid[, idN2:=1:.N, by=c("cut.two.way", "nodes", "perfor")]
@@ -1557,10 +2293,6 @@ ggplot(tune.grid) +
 
 #+END_SRC    
 
-#+RESULTS[<2021-11-04 11:57:18> 96256ec7dc2b9c54d732fb70adb6733726f34b63]:
-[[file:./figures/fig-colon-cr-initial-estimation.pdf]]
-
-
 
 *** Target parameters evaluated at fixed time-point
 
@@ -1587,6 +2319,8 @@ fit.contmle.F1.F2.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) 
             target=1:2, 
             tau=3*365.25)}) 
 names(fit.contmle.F1.F2.3yrs) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.contmle.F1.F2.3yrs,
+        file=paste0(path.to.file, "/output/", "fit.contmle.F1.F2.3yrs", ".rds"))
 #+END_SRC    
 
 Look at the output from the function call: 
@@ -1596,7 +2330,6 @@ Look at the output from the function call:
 fit.contmle.F1.F2.3yrs 
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 13:01:58> a0cd6e944ef2da2dd5d71c2a60f3f44ff46fae4c]:
 #+begin_example
 $Lev
 $Lev$init
@@ -1782,6 +2515,8 @@ pdat[, ci.lwr:=tmle.est-q.95*tmle.se]
 pdat[, ci.upr:=tmle.est+q.95*tmle.se]
 pdat[, no:=as.numeric(factor(which, levels=unique(which)))]
 
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
+
 ggplot(pdat) + 
     theme_bw(base_size=25) +     
     theme(legend.position="none", 
@@ -1805,8 +2540,6 @@ ggplot(pdat) +
     ggtitle("Treatment-specific absolute risk probabilities")
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 13:46:25> 05a167e6b3d8825232b5bec8b5ba3ce349c9cdad]:
-[[file:./figures/fig-tmle-results-colon-competing-risks-fixed.pdf]]
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-competing-risks-fixed.pdf" :exports none  :session *R* :width 12 :height 3.0 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")     
@@ -1834,6 +2567,8 @@ pdat[, ci.upr:=tmle.est+1.96*tmle.se]
 pdat[, which:=which.x]
 pdat[, no:=as.numeric(factor(which, levels=unique(which)))]
 
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
+
 ggplot(pdat) + 
     theme_bw(base_size=25) +     
     theme(legend.position="none", 
@@ -1858,9 +2593,6 @@ ggplot(pdat) +
     ggtitle("Average treatment effects") 
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 13:47:07> 82f4af399fc26f6f7d4009677f618e49ea776416]:
-[[file:./figures/fig-tmle-results-ate-colon-competing-risks-fixed.pdf]]
-
 
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
@@ -1875,7 +2607,7 @@ fit.contmle.F1.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
                             "death"=list(fit="cox.hal.sl",
                                          model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                            "cens"=list(fit="cox.sl",
+                            "cens"=list(fit="sl",
                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
                             ),
             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
@@ -1890,124 +2622,156 @@ fit.contmle.F1.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
             target=1, 
             tau=(1:10)/2*365.25)}) 
 names(fit.contmle.F1.10) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.contmle.F1.10,
+        file=paste0(path.to.file, "/output/", "fit.contmle.F1.10", ".rds"))
 #+END_SRC    
 
 Look at the output from the function call: 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
-fit.contmle.F1.5  
+fit.contmle.F1.10 
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 14:32:02> 4b312f94d430f77f5261576ad88cb7e2af24825d]:
 #+begin_example
 $Lev
 $Lev$init
 $Lev$init$F1
-         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-init.est 0.26540994 0.43127963  0.48926006 0.51722828   0.5415107
-init.se  0.02547524 0.02776233  0.02836688 0.02845304   0.0285176
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+init.est   0.1167954 0.26540994   0.3648577 0.43127963  0.45977603  0.48926006   0.50750214 0.51722828   0.53060030
+init.se    0.0193665 0.02547524   0.0270024 0.02776233  0.02802278  0.02836688   0.02843318 0.02845304   0.02846771
+         tau=1826.25
+init.est   0.5415107
+init.se    0.0285176
 
 
 $Lev$km
 $Lev$km$F1
-       tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-km.est 0.27210884 0.42517007  0.47619048 0.49659864   0.5239808
-km.se  0.02595559 0.02883217  0.02912751 0.02915992   0.0291366
+       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+km.est   0.1224490 0.27210884  0.36054422 0.42517007  0.44897959  0.47619048   0.49319728 0.49659864   0.51712915
+km.se    0.0191179 0.02595559  0.02800341 0.02883217  0.02900838  0.02912751   0.02915789 0.02915992   0.02915041
+       tau=1826.25
+km.est   0.5239808
+km.se    0.0291366
 
 
 $Lev$tmle
 $Lev$tmle$F1
-         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-tmle.est 0.27325444 0.42453449  0.47614571 0.50136733  0.52542050
-tmle.se  0.02542902 0.02773675  0.02835088 0.02842368  0.02849808
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+tmle.est  0.12552921 0.27628375  0.36203677 0.42573888  0.45118075  0.47734425   0.49316313 0.50103274    0.5165852
+tmle.se   0.01934004 0.02541927  0.02697648 0.02773627  0.02800323  0.02834991   0.02841354 0.02842329    0.0284535
+         tau=1826.25
+tmle.est  0.52678316
+tmle.se   0.02849799
 
 
 $Lev$convergenced.at.step
-[1] 12
+[1] 101
 
 $Lev$q.max.95
      95% 
-2.078667 
+2.222829 
 
 
 $`Lev+5FU`
 $`Lev+5FU`$init
 $`Lev+5FU`$init$F1
-         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-init.est 0.17091586 0.29230580  0.33816943 0.36103308  0.38130539
-init.se  0.02049811 0.02622656  0.02751099 0.02783808  0.02809854
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+init.est  0.07217484 0.17091586  0.24205926 0.29230580  0.31460552  0.33816943   0.35302632 0.36103308   0.37214707
+init.se   0.01402459 0.02049811  0.02421574 0.02622656  0.02668265  0.02751099   0.02775695 0.02783808   0.02788941
+         tau=1826.25
+init.est  0.38130539
+init.se   0.02809854
 
 
 $`Lev+5FU`$km
 $`Lev+5FU`$km$F1
-       tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-km.est 0.14878893 0.29065744  0.33564014 0.35642071  0.37753519
-km.se  0.02093413 0.02670975  0.02777728 0.02817422  0.02853805
+       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+km.est  0.05882353 0.14878893  0.23183391 0.29065744  0.30795848  0.33564014   0.35294118 0.35642071   0.35993979
+km.se   0.01384083 0.02093413  0.02482373 0.02670975  0.02715584  0.02777728   0.02811086 0.02817422   0.02823908
+       tau=1826.25
+km.est  0.37753519
+km.se   0.02853805
 
 
 $`Lev+5FU`$tmle
 $`Lev+5FU`$tmle$F1
-         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-tmle.est  0.1506807 0.28525483  0.33312205 0.35596125  0.37662495
-tmle.se   0.0204618 0.02622536  0.02750932 0.02783388  0.02809857
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+tmle.est  0.06029411 0.14809761   0.2297420 0.28738558  0.30585282   0.3344838   0.34996950 0.35467146   0.36090199
+tmle.se   0.01403929 0.02046458   0.0242083 0.02622643  0.02667109   0.0275110   0.02775821 0.02783342   0.02786805
+         tau=1826.25
+tmle.est  0.37554211
+tmle.se   0.02810211
 
 
 $`Lev+5FU`$convergenced.at.step
-[1] 16
+[1] 200
 
 $`Lev+5FU`$q.max.95
      95% 
-2.088366 
+2.226305 
 
 
 $Obs
 $Obs$init
 $Obs$init$F1
-         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-init.est 0.27176466 0.43930424   0.4972101 0.52496637  0.54895145
-init.se  0.02438973 0.02707843   0.0275867 0.02771404  0.02777321
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+init.est  0.11999158 0.27176466  0.37247248 0.43930424  0.46783411   0.4972101   0.51533146 0.52496637    0.5381880
+init.se   0.01843779 0.02438973  0.02636525 0.02707843  0.02740829   0.0275867   0.02776279 0.02771404    0.0277523
+         tau=1826.25
+init.est  0.54895145
+init.se   0.02777321
 
 
 $Obs$km
 $Obs$km$F1
-       tau=365.25 tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-km.est 0.27868852 0.4267277  0.48932819 0.52557056  0.54533912
-km.se  0.02567267 0.0283454  0.02865829 0.02863202  0.02855372
+       tau=182.625 tau=365.25 tau=547.875 tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+km.est  0.12786885 0.27868852  0.37071681 0.4267277  0.46297011  0.48932819   0.50580199 0.52557056   0.53874960
+km.se   0.01912156 0.02567267  0.02766879 0.0283454  0.02858221  0.02865829   0.02866512 0.02863202   0.02858486
+       tau=1826.25
+km.est  0.54533912
+km.se   0.02855372
 
 
 $Obs$tmle
 $Obs$tmle$F1
-         tau=365.25  tau=730.5 tau=1095.75   tau=1461 tau=1826.25
-tmle.est 0.26890892 0.42035850  0.48189991 0.51341987   0.5377257
-tmle.se  0.02437967 0.02703362  0.02755922 0.02770303   0.0277560
+         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
+tmle.est  0.12491865 0.27026894   0.3596506 0.41818869  0.45121671  0.48037609   0.50003182 0.51422788   0.52856677
+tmle.se   0.01843008 0.02437708   0.0263408 0.02703093  0.02738051  0.02755775   0.02773445 0.02770405   0.02774293
+         tau=1826.25
+tmle.est  0.53814667
+tmle.se   0.02775702
 
 
 $Obs$convergenced.at.step
-[1] 17
+[1] 85
 
 $Obs$q.max.95
      95% 
-2.089699
+2.238037
 #+end_example
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-competing-risks-F1-10.pdf" :exports none  :session *R* :width 12 :height 4.5 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")      
 
-pdat <- do.call("rbind", lapply(1:length(fit.contmle.F1.5), function(jj) {
-    fit.jj <- fit.contmle.F1.5[[jj]]
+pdat <- do.call("rbind", lapply(1:length(fit.contmle.F1.10), function(jj) {
+    fit.jj <- fit.contmle.F1.10[[jj]]
     out.jj <- t(fit.jj$tmle$F1)
-    return(data.table(out.jj, which=names(fit.contmle.F1.5)[jj], 
+    return(data.table(out.jj, which=names(fit.contmle.F1.10)[jj], 
                       q.95=fit.jj$q.max.95, 
                       time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
 }))
 
-pdat <- merge(pdat, data.table(q.max.95=unlist(lapply(fit.contmle.F1.5, function(x) x$q.max.95)), 
-                               which=names(fit.contmle.F1.5)), by="which")
+pdat <- merge(pdat, data.table(q.max.95=unlist(lapply(fit.contmle.F1.10, function(x) x$q.max.95)), 
+                               which=names(fit.contmle.F1.10)), by="which")
 
-pdat[, tmle.est:=1-tmle.est]
+pdat[, tmle.est:=tmle.est]
 pdat[, ci.lwr:=tmle.est-q.95*tmle.se] 
 pdat[, ci.upr:=tmle.est+q.95*tmle.se]
+
+pdat[, time:=time/365.25]
+
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
 
 ggplot(pdat) + 
     theme_bw(base_size=25) +     
@@ -2020,47 +2784,50 @@ ggplot(pdat) +
         plot.title=element_text(size=18)) + 
     ylab("TMLE estimate") +
     labs(linetype="") +  
-    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which, linetype=which), 
+                col="gray60", fill="grey80", alpha=0.4, size=0.7) +  
     #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
     #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
     #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
-    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
-    geom_point(aes(x=time, y=tmle.est), size=1) + 
-    #scale_y_continuous("", unique(pdat$no),   
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.7) + 
+    geom_point(aes(x=time, y=tmle.est), size=0.5) + 
+    #scale_y_continuous("", unique(pdat$no),    
     #                   limits=c(0.5,3.5), 
     #                   labels=unique(pdat$which)) +   
-    xlab("time") +  
+    xlab("time (years)") +   
     ggtitle("Treatment-specific absolute risk of cancer relapse")
 #+END_SRC    
 
-#+RESULTS[<2021-11-11 14:35:11> 4b14e474e82e9b075fa7604f85db0ee9f07b670c]:
-[[file:./figures/fig-tmle-results-colon-competing-risks-F1-10.pdf]]
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-ate-colon-competing-risks-F1-10.pdf" :exports none  :session *R* :width 12 :height 4 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")   
 
-pdat <- do.call("rbind", lapply(1:length(fit.contmle.F1.5), function(jj) {
-    fit.jj <- fit.contmle.F1.5[[jj]]
+pdat <- do.call("rbind", lapply(1:length(fit.contmle.F1.10), function(jj) {
+    fit.jj <- fit.contmle.F1.10[[jj]]
     out.jj <- t(fit.jj$tmle$F1)
-    return(data.table(out.jj, which=names(fit.contmle.F1.5)[jj], 
+    return(data.table(out.jj, which=names(fit.contmle.F1.10)[jj], 
                       q.95=fit.jj$q.max.95, time=as.numeric(gsub("tau\\=", "", rownames(out.jj)))))
 }))
 
-pdat[, tmle.est:=-tmle.est]
+pdat[, tmle.est:=tmle.est]
 
 pdat <- merge(pdat[which!="Obs"], pdat[which=="Obs"], by="time")
-pdat[, q.95:=q.95.y] 
+pdat[, q.95:=q.95.y]  
 pdat[q.95.y<=q.95.x, q.95:=q.95.x] 
 
 pdat[, tmle.est:=tmle.est.x-tmle.est.y]
 pdat[, tmle.se:=sqrt(tmle.se.x^2+tmle.se.y^2)]
 pdat[, which:=which.x]
 
-pdat <- merge(pdat, data.table(q.max.95=unlist(lapply(fit.contmle.F1.5, function(x) x$q.max.95)), 
-                               which=names(fit.contmle.F1.5)), by="which")
+pdat <- merge(pdat, data.table(q.max.95=unlist(lapply(fit.contmle.F1.10, function(x) x$q.max.95)), 
+                               which=names(fit.contmle.F1.10)), by="which")
 
 pdat[, ci.lwr:=tmle.est-q.95*tmle.se]
 pdat[, ci.upr:=tmle.est+q.95*tmle.se]
+
+pdat[, time:=time/365.25]
+
+pdat[which=="Lev+5FU", which:="Lev+fluo"]
 
 ggplot(pdat) + 
     theme_bw(base_size=25) +      
@@ -2073,19 +2840,17 @@ ggplot(pdat) +
         plot.title=element_text(size=18)) + 
     ylab("TMLE estimate") +
     labs(linetype="") +  
-    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which), fill="grey80", alpha=0.4) + 
+    geom_ribbon(aes(x=time, ymin=ci.lwr, ymax=ci.upr, group=which, linetype=which), 
+                col="gray60", fill="grey80", alpha=0.4, size=0.7) +  
     #geom_segment(aes(y=no, yend=no, x=ci.lwr, xend=ci.upr), size=1) +  
     #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.lwr, xend=ci.lwr), size=1) +  
     #geom_segment(aes(y=no-0.1, yend=no+0.1, x=ci.upr, xend=ci.upr), size=1) +  
-    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.9) + 
-    geom_point(aes(x=time, y=tmle.est), size=1) + 
+    geom_line(aes(x=time, y=tmle.est, linetype=which), size=0.7) + 
+    geom_point(aes(x=time, y=tmle.est), size=0.5) + 
     geom_hline(aes(yintercept=0), alpha=0.6, linetype="dotted") +  
-    xlab("TMLE estimate") +  
+    xlab("time (years)") +  
     ggtitle("Average treatment effects")
 #+END_SRC    
-
-#+RESULTS[<2021-11-11 14:35:07> 910e3bc5d90ca63ed504607effb257ab0d4fb713]:
-[[file:./figures/fig-tmle-results-ate-colon-competing-risks-F1-10.pdf]]
 
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
@@ -2100,7 +2865,6 @@ The code has been tested with the following R version
 version  
 #+END_SRC
 
-#+RESULTS[<2021-10-26 13:12:28> 85f1e83108ae4e1dd460050259276acda3bdd3cf]:
 #+begin_example
                _                           
 platform       x86_64-pc-linux-gnu         
