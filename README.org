@@ -117,7 +117,7 @@ Note that for both datasets we simply removed observations with
 missing covariates.\\
 
 
-#+Begin_Src latex :file "~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/figures/graph-multistate-colon.pdf" :packages '(("" "tikz")) :border 1em :results raw
+#+Begin_Src latex :file "~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/figures/graph-multistate-colon.pdf" :packages '(("" "tikz")) :border 1em :results raw :exports none
   % Define block styles   
   \usetikzlibrary{shapes,arrows,snakes} 
   \tikzstyle{astate} = [circle, draw, text centered, font=\footnotesize]
