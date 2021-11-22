@@ -67,6 +67,7 @@ contmle <- function(dt,
                     verbose=FALSE, verbose.sl=FALSE, verbose.hal=FALSE, check.sup=FALSE,
                     #-- for comparison; output kaplan-meier and hr; 
                     output.km=FALSE, only.km=FALSE, only.cox.sl=FALSE, output.RR=FALSE,
+                    output.ee=FALSE, 
                     #-- dont use;
                     output.mat=FALSE, save.sl.pick=FALSE, output.tune.grid=FALSE, 
                     #-- models incorporated in super learner;
@@ -615,6 +616,13 @@ contmle <- function(dt,
                                                         treatment=A.name, order=2,
                                                         mat=mat))
 
+                    if (verbose.hal) {
+                        print("one.way.screening:")
+                        print(one.way.screening)
+                        print("two.way.screening:")
+                        print(two.way.screening)
+                    }
+
                     if (verbose & length(one.way.screening)>0) print(paste0("variables picked by initial screening: ", paste0(one.way.screening, collapse=", ")))
                     
                     mat <- fit.hal(covars=one.way.screening, dt=dt, cut.one.way=15,
@@ -640,13 +648,24 @@ contmle <- function(dt,
 
                     (two.way.screening <- hal.screening(covars=one.way.screening, dt=dt, cut.one.way=5,
                                                         delta.var=delta.var, delta.value=fit.delta,
-                                                        treatment=A.name, order=2,
+                                                        treatment=A.name, order=2, cut.two.way=15,
                                                         mat=mat))
+
+                    if (verbose) {
+                        print("one.way.screening:")
+                        print(one.way.screening)
+                        print("two.way.screening:")
+                        print(two.way.screening)
+                    }
                     
                     tune.grid <- expand.grid(cut.one.way=cut.one.way.grid, #ceiling(seq(5, 20, length=6))
                                              cut.two.way=cut.two.way.grid) #ceiling(seq(0, 20, length=5))
 
+                   # if (two.way.screening[1,1]=="") tune.grid <- tune.grid[cut.two.way==0]
+
                     cve.tune.grid <- sapply(1:nrow(tune.grid), function(jj) {
+                        if (verbose) print(paste0("cut.one.way=", tune.grid[jj,"cut.one.way"],
+                                                  ", cut.two.way=", tune.grid[jj,"cut.two.way"]))
                         return(fit.hal(covars=covars, dt=dt, cut.one.way=tune.grid[jj,"cut.one.way"],
                                        mat=mat, delta.var=delta.var, V=V,
                                        intervention=a,
@@ -1327,6 +1346,30 @@ contmle <- function(dt,
         print("-----")
     }
 
+    if (output.ee) {
+        if (length(target)>1) {
+            ee.fit <- lapply(1:length(target), function(jj) {
+                ee.out <- rbind(ee.est=eval.equation(mat)[[jj]]+tmle.list$init[[jj]]["init.est",],
+                                ee.se=tmle.list$init[[jj]]["init.se",])
+                colnames(ee.out) <- colnames(tmle.list$init[[jj]])
+                return(ee.out)
+            })
+            if (length(ee.fit)<length(tmle.list$init)) {
+                ee.fit$S <- rbind(ee.est=sapply(tau, function(tt) {
+                    (treat.effect!="ate")-sum(sapply(ee.fit, function(fl) fl["ee.est",paste0("tau=", tt)]))
+                }),
+                ee.se=tmle.list$init$S["init.se",])
+                colnames(ee.fit$S) <- colnames(tmle.list$init$S)
+            }
+            names(ee.fit) <- names(tmle.list$init)
+        } else {
+            ee.fit <- rbind(ee.est=-eval.equation(mat)+tmle.list$init["init.est",],
+                            ee.se=tmle.list$init["init.se",])
+            colnames(ee.fit) <- colnames(tmle.list$init)
+        }
+        tmle.list$ee <- ee.fit
+    }
+    
     #----------------------------------------
     #-- 12 (I) -- multivariate one-step tmle:
 
