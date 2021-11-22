@@ -945,26 +945,6 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
 
 ** Analysis of the =colon= survival data
 
-*** Cox models for Cox super learner 
-
-
-#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports code :results none :session *R* :cache yes
-sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
-               "differ", "adhere", "extent", "surg", 
-               "rx*age", "rx*sex", "rx*perfor")
-sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
-names(sl.models.grid) <- sl.models
-
-sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
-
-sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
-    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
-        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
-    })), collapse="+"))))})
-
-names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
-#+END_SRC
 
 *** Cox models for Cox super learner 
 
@@ -1302,7 +1282,7 @@ ggplot(pdat) +
 *** Target parameters evaluated at multiple time-points 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports none  :results none  :session *R* :cache yes 
+#+BEGIN_SRC R :exports code  :results none  :session *R* :cache yes 
 fit.colon.surv.50 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
     contmle(colon.surv, 
             estimation=list("outcome"=list(fit="cox.hal.sl",
@@ -1329,7 +1309,7 @@ saveRDS(fit.colon.surv.50,
 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
 fit.colon.surv.30 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
     contmle(colon.surv, 
             estimation=list("outcome"=list(fit="cox.hal.sl",
