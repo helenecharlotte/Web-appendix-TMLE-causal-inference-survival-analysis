@@ -27,6 +27,8 @@ involved with this.
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-real-valued-parameter][Targeting hazard estimators for real-valued parameter]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-multivariate-parameter][Targeting hazard estimators for multivariate parameter]]
 
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#on-the-initial-estimation][On the initial estimation]]
+
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
 
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point][Fixed time-point]]
