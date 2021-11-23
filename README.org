@@ -1025,6 +1025,8 @@ covariates or interactions for which at least one of the basis
 functions was given a non-zero coefficient. For initial estimation of
 the censoring hazard we used simply the Cox super learner. 
 
+[[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
+
 
 ** Analysis of the =colon= survival data
 
