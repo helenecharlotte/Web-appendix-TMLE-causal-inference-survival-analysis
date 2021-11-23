@@ -943,14 +943,17 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
 
 
 
-** Analysis of the =colon= survival data
 
 
-*** Cox models for Cox super learner 
+** On the initial estimation
 
+We consider a large number of different Cox models by including and
+excluding different combinations of both main effects of covariates
+and also a selection of interactions between treatment and
+covariates. We specify these with the following code:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports code :results none :session *R* :cache yes
+#+BEGIN_SRC R :exports code :results output :session *R* :cache yes
 sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
                "differ", "adhere", "extent", "surg",
                "rx*age", "rx*sex", "rx*perfor")
@@ -965,7 +968,65 @@ sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
     })), collapse="+"))))})
 
 names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
+head(sl.models)
 #+END_SRC
+
+#+RESULTS[<2021-11-23 07:44:13> f2e3c33679841b2c807fb0fc388413195b470285]:
+#+begin_example
+$cox.model.1
+$cox.model.1[[1]]
+Surv(time, event == 1) ~ rx
+<environment: 0x55847c18b5a8>
+
+
+$cox.model.2
+$cox.model.2[[1]]
+Surv(time, event == 1) ~ rx + sex + nodes + age + obstruct + 
+    perfor + differ + adhere + extent + surg + rx * age
+<environment: 0x55847c24dba8>
+
+
+$cox.model.3
+$cox.model.3[[1]]
+Surv(time, event == 1) ~ rx + sex + nodes + age + obstruct + 
+    perfor + differ + adhere + extent + surg + rx * sex
+<environment: 0x55847cce1c58>
+
+
+$cox.model.4
+$cox.model.4[[1]]
+Surv(time, event == 1) ~ rx + sex + nodes + age + obstruct + 
+    perfor + differ + adhere + extent + rx * age + rx * sex
+<environment: 0x55847cd0a798>
+
+
+$cox.model.5
+$cox.model.5[[1]]
+Surv(time, event == 1) ~ rx + sex + nodes + age + obstruct + 
+    perfor + differ + adhere + surg + rx * age + rx * sex
+<environment: 0x55847cd2f068>
+
+
+$cox.model.6
+$cox.model.6[[1]]
+Surv(time, event == 1) ~ rx + sex + nodes + age + obstruct + 
+    perfor + differ + extent + surg + rx * age + rx * sex
+<environment: 0x55847cd56bd0>
+#+end_example
+
+In all following analyses, we use for initial estimation of
+cause-specific hazards a super learner consisting of the Cox models
+specified above as well as a selection of different HAL
+estimators. For the HAL estimators we first selected covariates and
+two-way interactions with a pre-screening step which only included
+covariates or interactions for which at least one of the basis
+functions was given a non-zero coefficient. For initial estimation of
+the censoring hazard we used simply the Cox super learner. 
+
+
+** Analysis of the =colon= survival data
+
+
 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -1118,6 +1179,9 @@ ggplot(tune.grid) +
 
 
 *** Target parameters evaluated at fixed time-point 
+
+We first consider TMLE estimation of the survival probabilities
+evaluated after 3 years of follow-up: 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
@@ -1280,6 +1344,9 @@ ggplot(pdat) +
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Target parameters evaluated at multiple time-points 
+
+We here consider TMLE estimation of the survival probabilities
+evaluated at a grid of 50 equidistant follow-up time-points.
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code  :results none  :session *R* :cache yes 
@@ -1496,6 +1563,14 @@ $Obs$q.max.95
 #+end_example
 
 
+Above we used the one-step TMLE to ensure compatible estimation. Here
+we instead use the iterative TMLE which targets the survival
+probabilities for each time-point separately. We also output the
+estimating equations estimator which, like the iterative TMLE,
+produces estimates solving each efficient influence curve equation
+separately, thus not guaranteed to yield compatible estimates for the
+full survival curve.
+
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
 fit.colon.surv.iterative.50 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
@@ -1518,6 +1593,12 @@ names(fit.colon.surv.iterative.50) <- c("Lev", "Lev+5FU", "Obs")
 saveRDS(fit.colon.surv.iterative.50,
         file=paste0(path.to.file, "/output/", "fit.colon.surv.50", "-iterative", ".rds"))
 #+END_SRC    
+
+We can check monotonicity of the curve estimated with the iterative
+TMLE as follows. The rows in the output below are the time-points
+where the survival curve was increasing from one time-point to the
+next. (The amount that it is increasing is not large for these data,
+but this should illustrate the issue).
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
@@ -1545,6 +1626,9 @@ check.monotone[diff<0]
 10: 0.441432896377600 0.0269536562228939   Obs 1643.625 -0.0000924543947891
 #+end_example
 
+The same way we can check monotonicity of the curve estimated by
+solving the estimating equations as follows.
+
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
 check.monotone <- do.call("rbind", lapply(1:length(fit.colon.surv.iterative.50), function(jj) {
@@ -1571,6 +1655,9 @@ check.monotone[diff<0]
 10: 0.2978114 0.02695369 Lev+5FU 1351.425 -0.0000001621608
 11: 0.3500704 0.02796207 Lev+5FU 1716.675 -0.0000025898928
 #+end_example
+
+If we check the one-step TMLE, we just see that it is --- as expected
+--- monotone.
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
@@ -1721,29 +1808,6 @@ ggplot(pdat) + #[which=="Lev+5FU"]) +
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 ** Analysis of the =colon= competing risks data
-
-
-
-*** Cox models for Cox super learner 
-
-
-#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports code :results none :session *R* :cache yes
-sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
-               "differ", "adhere", "extent", "surg",
-               "rx*age", "rx*sex", "rx*perfor")
-sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
-names(sl.models.grid) <- sl.models
-
-sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
-
-sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
-    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
-        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
-    })), collapse="+"))))})
-
-names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
-#+END_SRC
 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -2277,6 +2341,9 @@ ggplot(tune.grid) +
 
 *** Target parameters evaluated at fixed time-point
 
+We first consider TMLE estimation of all state occupation
+probabilities evaluated after 3 years of follow-up:
+
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
 fit.contmle.F1.F2.3yrs <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
@@ -2579,6 +2646,9 @@ ggplot(pdat) +
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Target parameters evaluated at multiple time-points 
+
+We here consider TMLE estimation of the absolute risk of cancer
+relapse evaluated at a grid of 10 equidistant follow-up time-points.
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
