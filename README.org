@@ -27,7 +27,7 @@ involved with this.
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-real-valued-parameter][Targeting hazard estimators for real-valued parameter]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-multivariate-parameter][Targeting hazard estimators for multivariate parameter]]
 
-- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#on-the-initial-estimation][On the initial estimation]]
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#on-the-initial-estimation][On the initial estimation for analysis of the colon data]]
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
 
@@ -947,7 +947,7 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
 
 
 
-** On the initial estimation
+** On the initial estimation for analysis of the =colon= data
 
 We consider a large number of different Cox models by including and
 excluding different combinations of both main effects of covariates
@@ -973,7 +973,6 @@ names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
 head(sl.models)
 #+END_SRC
 
-#+RESULTS[<2021-11-23 07:44:13> f2e3c33679841b2c807fb0fc388413195b470285]:
 #+begin_example
 $cox.model.1
 $cox.model.1[[1]]
