@@ -1444,8 +1444,8 @@ contmle <- function(dt,
         
         Pn.eic.norm.prev <- Pn.eic.norm <- Pn.eic.norm.fun(Pn.eic2, Pn.eic)
 
-        if (verbose) print(paste0("Pn.eic.norm=", Pn.eic.norm))
-
+        if (verbose) print(paste0("Pn.eic.norm = ", Pn.eic.norm))
+       
         for (step in 1:no.small.steps) {
 
             if (cr) {
@@ -1495,7 +1495,8 @@ contmle <- function(dt,
                                               get(paste0("delta", fit.delta, ".dx"))+
                                               (get(time.var)<=tau[kk])*Ht*(
                                                   (get(paste0("Ht", fit.delta2,".lambda", fit.delta,".", kk)))*
-                                                  Pn.eic2[each2==outcome.index[target]][[1]][kk]
+                                                  #Pn.eic2[each2==outcome.index[target]][[1]][kk]
+                                                  unlist(Pn.eic2[each2==outcome.index[target]])[kk]
                                               )/Pn.eic.norm]
                                 }
                             }
@@ -1512,7 +1513,8 @@ contmle <- function(dt,
                                               get(paste0("delta", fit.delta, ".dx"))+
                                               (get(time.var)<=tau[kk])*Ht*(
                                                   (get(paste0("Ht", fit.delta2,".lambda", fit.delta,".", kk)))*
-                                                  Pn.eic.separate[each2==outcome.index[target]][[1]][each==outcome.index[target]][[1]][kk]
+                                                  #Pn.eic.separate[each2==outcome.index[target]][[1]][each==outcome.index[target]][[1]][kk]
+                                                  unlist(Pn.eic.separate[each2==outcome.index[target]])[each==outcome.index[target]][[1]][kk]
                                               )/Pn.eic.norm]
                                 }
                             }
@@ -1605,6 +1607,7 @@ contmle <- function(dt,
             Pn.eic.norm <- Pn.eic.norm.fun(Pn.eic2, Pn.eic)
 
             if (verbose) print(paste0("step = ", step))
+            
             if (verbose) print(paste0("Pn.eic.norm=", Pn.eic.norm))
             
             if (Pn.eic.norm.prev<=Pn.eic.norm) { # reset all columns to '.tmp'
