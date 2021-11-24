@@ -52,7 +52,6 @@ setwd("~/research/TMLE-from-2020june/survival-baseline/Web-appendix-TMLE-causal-
 source("./usage/load.R")  
 #+END_SRC
 
-
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R  :results none :exports none  :session *R* :cache yes  
 path.to.file <- "~/research/TMLE-from-2020june/survival-baseline/Web-appendix-TMLE-causal-inference-survival-analysis"
@@ -1569,9 +1568,9 @@ $Obs$q.max.95
 Above we used the one-step TMLE to ensure compatible estimation. Here
 we instead use the iterative TMLE which targets the survival
 probabilities for each time-point separately. We also output the
-estimating equations estimator which, like the iterative TMLE,
+estimating equations estimates which, like the iterative TMLE,
 produces estimates solving each efficient influence curve equation
-separately, thus not guaranteed to yield compatible estimates for the
+separately, thus not guaranteed to yield compatible estimation of the
 full survival curve.
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -2374,6 +2373,37 @@ saveRDS(fit.contmle.F1.F2.3yrs,
         file=paste0(path.to.file, "/output/", "fit.contmle.F1.F2.3yrs", ".rds"))
 #+END_SRC    
 
+
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+fit.contmle.F1.F2.5 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.cr, 
+            estimation=list("relapse"=list(fit="cox.hal.sl",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox.hal.sl",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="sl",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,  
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE,
+            output.km=TRUE, 
+            weighted.norm="Sigma", 
+            simultaneous.ci=TRUE,
+            target=1:2, 
+            tau=(1:5)*365.25)}) 
+names(fit.contmle.F1.F2.5) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.contmle.F1.F2.5,
+        file=paste0(path.to.file, "/output/", "fit.contmle.F1.F2.5", ".rds"))
+#+END_SRC    
+
+
 Look at the output from the function call: 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -2679,6 +2709,35 @@ names(fit.contmle.F1.10) <- c("Lev", "Lev+5FU", "Obs")
 saveRDS(fit.contmle.F1.10,
         file=paste0(path.to.file, "/output/", "fit.contmle.F1.10", ".rds"))
 #+END_SRC    
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+fit.contmle.F1.20 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
+    contmle(colon.cr, 
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect=treat,  
+            hal.sl=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, verbose=TRUE, 
+            simultaneous.ci=TRUE,
+            weighted.norm="Sigma", 
+            output.km=TRUE, 
+            target=1, 
+            tau=(1:20)/(2*2)*365.25)}) 
+names(fit.contmle.F1.20) <- c("Lev", "Lev+5FU", "Obs")
+saveRDS(fit.contmle.F1.20,
+        file=paste0(path.to.file, "/output/", "fit.contmle.F1.20", ".rds"))
+#+END_SRC    
+
 
 Look at the output from the function call: 
 
