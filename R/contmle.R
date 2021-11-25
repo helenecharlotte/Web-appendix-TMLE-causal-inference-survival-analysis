@@ -44,7 +44,7 @@ contmle <- function(dt,
                     #-- pick super learning loss (should not change this);
                     sl.method=3, #DO NOT CHANGE.
                     #-- number of folds in cross-validation;
-                    V=5,
+                    V=10,
                     #-- specify penalization in hal? 
                     lambda.cv=NULL,
                     maxit=1e3, 
