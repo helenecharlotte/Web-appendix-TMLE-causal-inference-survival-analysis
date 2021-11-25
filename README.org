@@ -23,7 +23,9 @@ We consider as an example the analysis of a particular dataset as well
 as a simulated version resembling it. The point of looking at the
 simulated version is that we know the truth, both in terms of the
 underlying statistical model and the true values of the considered
-target parameters. We will go through the following: 
+target parameters.\\
+
+We will go through the following:
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#data-example][Presentation of the data example]]
 
@@ -98,7 +100,6 @@ Number of subjects assigned to each treatment (=rx=) option:
 colon.surv[, table(rx)] 
 #+END_SRC 
 
-#+RESULTS[<2021-11-25 08:10:30> eceb605fa0f7ede0e55b30ee62fd62ea8391b19b]:
 : rx
 :     Obs     Lev Lev+5FU 
 :     305     294     289
@@ -220,8 +221,8 @@ set.seed(15)
 
 The hazards are generated from Weibull distributions with functional
 form as specified by the =formula.1= (for the hazard of the event
-distribution) and =formula.0= arguments (for the hazard of the
-censoring distribution); note that for both we simply include main
+distribution) and =formula.0= (for the hazard of the censoring
+distribution) arguments; note that for both we simply include main
 effects of treatment and all covariates. The treatment variable
 (called =rx=) is generated from the model including, as well, all main
 effects of covariates. The parameters for each model are estimated
@@ -263,10 +264,10 @@ set.seed(31)
 #+end_example
 
 Here the cause-specific hazards are generated from Weibull
-distributions with functional form as specified by the =formula.1= and
-=formula.2= arguments. As before, =formula.0= specifies the hazard of
-the censoring distribution.  Note that we specified the model for the
-cause-1 specific hazard with a squared effect of =nodes= and
+distributions with functional forms as specified by the =formula.1=
+and =formula.2= arguments. As before, =formula.0= specifies the hazard
+of the censoring distribution.  Note that we specified the model for
+the cause-1 specific hazard with a squared effect of =nodes= and
 interactions between treatment and three of the covariates.
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
@@ -375,14 +376,20 @@ colnames(tab2) <- paste0((1:10)/2)
 print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3)) 
 #+END_SRC    
 
+The approximations above were obtained by simulating a large dataset
+(n = 1e6) from each counterfactual scenario (with no censoring and
+setting A = 0,1,2 for all subjects) and computing the sample average
+of the outcome indicator at the time-horizon of interest.
+
+
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Targeting hazard estimators for real-valued parameter
 
-We here show the code to apply our TMLE function to *the simulated
-data* to target the real-valued parameter being the absolute risk of
-cancer relapse after 3 years of follow-up under treatment with
-levamisole plus fluorouracil. \\
+We here show the code to apply our TMLE function to the simulated data
+to target the real-valued parameter being the absolute risk of cancer
+relapse after 3 years of follow-up under treatment with levamisole
+plus fluorouracil. \\
 
 Note that we simply use a Cox regression including main effects of all
 covariates for initial estimation of each cause-specific hazards and
@@ -459,12 +466,11 @@ Recall that the true value of this target parameter is:
 true.a2[(1:10)/2==3][[1]]["F1"]
 #+END_SRC   
 
-#+RESULTS[<2021-11-25 08:18:01> ba1dc36541a4958b614f42ddad8b02e873381d17]:
 :       F1 
 : 0.271716
 
-Notice that how the initial and the updated TMLE estimates each differ
-from the true value; the initial estimator is biased due to the
+Notice how the initial and the updated TMLE estimates each differ from
+the true value; the initial estimator is biased due to the
 misspecification of the cause-1 specific hazard, but this bias is
 removed for the TMLE estimator due to its double robustness
 properties.
@@ -638,7 +644,6 @@ fit.tmle.F1.F2.Lev5FU.3yrs <-
 fit.tmle.F1.F2.Lev5FU.3yrs 
 #+END_SRC   
 
-#+RESULTS[<2021-11-25 08:24:40> e1369b712d18c66fb225564fad682e20a8e6fe99]:
 #+begin_example
 $init
 $init$F1
@@ -695,16 +700,15 @@ $q.max.95
 #+end_example
 
 The number found by =q.max.95= in the output is the 95% quantile used
-to compute simultaneous confidence intervals. (Notice, however, that
-here this number is very close to 1.96, so there will not be much
-difference between the simultaneous and the marginal confidence
-intervals). \\
+to compute simultaneous confidence intervals. Notice that here this
+number is very close to 1.96, so there will not be much difference
+between the simultaneous and the marginal confidence intervals. \\
 
-There are different options to how to run the one-step TMLE,
+There are different technical options to how to run the one-step TMLE,
 corresponding to different versions of weighted norms. Above we used
 the unweighted norm (which is default), but if we instead specify the
 argument =weighted.norm= as =Sigma=, we use the covariance weighted
-norm which often leads to much faster convergence: 
+norm which often leads to much faster convergence:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
@@ -731,7 +735,6 @@ fit.tmle.F1.F2.Lev5FU.3yrs <-
 fit.tmle.F1.F2.Lev5FU.3yrs  
 #+END_SRC   
 
-#+RESULTS[<2021-11-25 08:28:34> 7088f5443fe37114e8cce0086c39e74571f08762]:
 #+begin_example
 $init
 $init$F1
@@ -1103,10 +1106,16 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
 
 ** Initial estimation for analysis of the =colon= data
 
-We consider a large number of different Cox models by including and
-excluding different combinations of both main effects of covariates
-and also a selection of interactions between treatment and
-covariates. We specify these with the following code:
+Now we consider the actual colon data (and not the simulated
+version). For initial estimation of cause-specific hazards in all the
+following analyses, we use will a super learner consisting of the Cox
+models specified above as well as a selection of different HAL
+estimators.\\
+
+Here we specify a large number of different Cox models by including
+and excluding different combinations of both main effects of
+covariates and also a selection of interactions between treatment and
+covariates:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results output :session *R* :cache yes
@@ -1169,14 +1178,11 @@ Surv(time, event == 1) ~ rx + sex + nodes + age + obstruct +
 <environment: 0x55847cd56bd0>
 #+end_example
 
-In all following analyses, we use for initial estimation of
-cause-specific hazards a super learner consisting of the Cox models
-specified above as well as a selection of different HAL
-estimators. For the HAL estimators we first selected covariates and
-two-way interactions with a pre-screening step which only included
-covariates or interactions for which at least one of the basis
-functions was given a non-zero coefficient. For initial estimation of
-the censoring hazard we used simply the Cox super learner. 
+For the HAL estimators we first selected covariates and two-way
+interactions with a pre-screening step which only included covariates
+or interactions for which at least one of the basis functions was
+given a non-zero coefficient. For initial estimation of the censoring
+hazard we used simply the Cox super learner.
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
