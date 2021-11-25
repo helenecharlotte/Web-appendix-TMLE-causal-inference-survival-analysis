@@ -378,8 +378,9 @@ print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3))
 
 The approximations above were obtained by simulating a large dataset
 (n = 1e6) from each counterfactual scenario (with no censoring and
-setting A = 0,1,2 for all subjects) and computing the sample average
-of the outcome indicator at the time-horizon of interest.
+setting the treatment to the intervened upon level for all subjects)
+and computing the sample average of the outcome indicator at the
+time-horizon of interest.
 
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
@@ -394,8 +395,8 @@ plus fluorouracil. \\
 Note that we simply use a Cox regression including main effects of all
 covariates for initial estimation of each cause-specific hazards and
 also for the hazard of censoring (specified in the =estimation=
-argument, with list elements for each hazard). This means that the Cox
-model is misspecified for the cause-1 specific hazard. To estimate the
+argument, with list elements for each hazard). Thus, the Cox model is
+misspecified for the cause-1 specific hazard. To estimate the
 probability distribution of treatment (specified in the argument
 =treat.model=), we similarly include main effects of all
 covariates. To get the treatment-specific absolute risk of cancer
@@ -608,12 +609,13 @@ ggplot(pdat.melt) +
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
 sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
-               "differ", "adhere", "extent", "surg", "nodes.squared",
-               "rx*age", "rx*sex", "rx*perfor")
+               "differ", "adhere", "extent", "surg", "nodes.squared"## ,
+               ## "rx*age", "rx*sex", "rx*perfor"
+               )
 sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
 names(sl.models.grid) <- sl.models
 
-sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
+sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>(ncol(sl.models.grid)-3) | (1:nrow(sl.models.grid))==2],]
 
 sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
     list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
@@ -651,7 +653,11 @@ tune.grid[which=="cox", differ:=unlist(lapply(sl.models, function(x) "differ"%in
 tune.grid[which!="cox", differ:=0]
 tune.grid[which=="cox", extent:=unlist(lapply(sl.models, function(x) "extent"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
 tune.grid[which!="cox", extent:=0]
-tune.grid[order(cve)]
+tune.grid2 <- tune.grid[order(cve)]
+tune.grid2[, idN:=1:.N, by=which]
+tune.grid2[, idNall:=1:.N]
+tune.grid2[idN %in% 1:10]
+tune.grid2[nodes.squared==FALSE & which=="cox"]
 #+END_SRC   
 
 
@@ -758,7 +764,8 @@ There are different technical options to how to run the one-step TMLE,
 corresponding to different versions of weighted norms. Above we used
 the unweighted norm (which is default), but if we instead specify the
 argument =weighted.norm= as =Sigma=, we use the covariance weighted
-norm which often leads to much faster convergence:
+norm which often leads to much fewer steps along the local least
+favorable submodel:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
@@ -1857,7 +1864,7 @@ probabilities for each time-point separately. We also output the
 estimating equations estimates which, like the iterative TMLE
 estimates, solve each efficient influence curve equation
 separately. Again, this is thus not guaranteed to yield compatible
-estimation of the full survival curve: 
+estimation of the full survival curve. 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
@@ -1883,10 +1890,10 @@ saveRDS(fit.colon.surv.iterative.50,
 #+END_SRC    
 
 We can check monotonicity of the curve estimated with the iterative
-TMLE as follows, with the rows in the output below are the time-points
-where the survival curve was increasing from one time-point to the
-next (the amount that it is increasing is not large for these data,
-but this should still illustrate the issue):
+TMLE as follows, showing the time-points where the survival curve was
+increasing from one time-point to the next (the amount that it is
+increasing is not large for these data, but this should still
+illustrate the issue):
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
@@ -3034,7 +3041,8 @@ saveRDS(fit.contmle.F1.20,
 #+END_SRC    
 
 
-Look at the output from the function call: 
+The output from the function call gives us the estimated absolute risk
+probabilities of cancer relapse across the time-points:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports results :results output  :session *R* :cache yes 
@@ -3159,123 +3167,6 @@ $Obs$q.max.95
 2.238451
 #+end_example
 
-#+begin_example
-$Lev
-$Lev$init
-$Lev$init$F1
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est   0.1167954 0.26540994   0.3648577 0.43127963  0.45977603  0.48926006   0.50750214 0.51722828   0.53060030
-init.se    0.0193665 0.02547524   0.0270024 0.02776233  0.02802278  0.02836688   0.02843318 0.02845304   0.02846771
-         tau=1826.25
-init.est   0.5415107
-init.se    0.0285176
-
-
-$Lev$km
-$Lev$km$F1
-       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-km.est   0.1224490 0.27210884  0.36054422 0.42517007  0.44897959  0.47619048   0.49319728 0.49659864   0.51712915
-km.se    0.0191179 0.02595559  0.02800341 0.02883217  0.02900838  0.02912751   0.02915789 0.02915992   0.02915041
-       tau=1826.25
-km.est   0.5239808
-km.se    0.0291366
-
-
-$Lev$tmle
-$Lev$tmle$F1
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est  0.12552921 0.27628375  0.36203677 0.42573888  0.45118075  0.47734425   0.49316313 0.50103274    0.5165852
-tmle.se   0.01934004 0.02541927  0.02697648 0.02773627  0.02800323  0.02834991   0.02841354 0.02842329    0.0284535
-         tau=1826.25
-tmle.est  0.52678316
-tmle.se   0.02849799
-
-
-$Lev$convergenced.at.step
-[1] 101
-
-$Lev$q.max.95
-     95% 
-2.222829 
-
-
-$`Lev+5FU`
-$`Lev+5FU`$init
-$`Lev+5FU`$init$F1
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est  0.07217484 0.17091586  0.24205926 0.29230580  0.31460552  0.33816943   0.35302632 0.36103308   0.37214707
-init.se   0.01402459 0.02049811  0.02421574 0.02622656  0.02668265  0.02751099   0.02775695 0.02783808   0.02788941
-         tau=1826.25
-init.est  0.38130539
-init.se   0.02809854
-
-
-$`Lev+5FU`$km
-$`Lev+5FU`$km$F1
-       tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-km.est  0.05882353 0.14878893  0.23183391 0.29065744  0.30795848  0.33564014   0.35294118 0.35642071   0.35993979
-km.se   0.01384083 0.02093413  0.02482373 0.02670975  0.02715584  0.02777728   0.02811086 0.02817422   0.02823908
-       tau=1826.25
-km.est  0.37753519
-km.se   0.02853805
-
-
-$`Lev+5FU`$tmle
-$`Lev+5FU`$tmle$F1
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est  0.06029411 0.14809761   0.2297420 0.28738558  0.30585282   0.3344838   0.34996950 0.35467146   0.36090199
-tmle.se   0.01403929 0.02046458   0.0242083 0.02622643  0.02667109   0.0275110   0.02775821 0.02783342   0.02786805
-         tau=1826.25
-tmle.est  0.37554211
-tmle.se   0.02810211
-
-
-$`Lev+5FU`$convergenced.at.step
-[1] 200
-
-$`Lev+5FU`$q.max.95
-     95% 
-2.226305 
-
-
-$Obs
-$Obs$init
-$Obs$init$F1
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-init.est  0.11999158 0.27176466  0.37247248 0.43930424  0.46783411   0.4972101   0.51533146 0.52496637    0.5381880
-init.se   0.01843779 0.02438973  0.02636525 0.02707843  0.02740829   0.0275867   0.02776279 0.02771404    0.0277523
-         tau=1826.25
-init.est  0.54895145
-init.se   0.02777321
-
-
-$Obs$km
-$Obs$km$F1
-       tau=182.625 tau=365.25 tau=547.875 tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-km.est  0.12786885 0.27868852  0.37071681 0.4267277  0.46297011  0.48932819   0.50580199 0.52557056   0.53874960
-km.se   0.01912156 0.02567267  0.02766879 0.0283454  0.02858221  0.02865829   0.02866512 0.02863202   0.02858486
-       tau=1826.25
-km.est  0.54533912
-km.se   0.02855372
-
-
-$Obs$tmle
-$Obs$tmle$F1
-         tau=182.625 tau=365.25 tau=547.875  tau=730.5 tau=913.125 tau=1095.75 tau=1278.375   tau=1461 tau=1643.625
-tmle.est  0.12491865 0.27026894   0.3596506 0.41818869  0.45121671  0.48037609   0.50003182 0.51422788   0.52856677
-tmle.se   0.01843008 0.02437708   0.0263408 0.02703093  0.02738051  0.02755775   0.02773445 0.02770405   0.02774293
-         tau=1826.25
-tmle.est  0.53814667
-tmle.se   0.02775702
-
-
-$Obs$convergenced.at.step
-[1] 85
-
-$Obs$q.max.95
-     95% 
-2.238037
-#+end_example
 
 #+BEGIN_SRC R :results graphics :file "./figures/fig-tmle-results-colon-competing-risks-F1-10.pdf" :exports none  :session *R* :width 12 :height 4.5 :cache yes
 setwd("~/research/TMLE-from-2020june/survival-baseline/worg/lifetime/")       
