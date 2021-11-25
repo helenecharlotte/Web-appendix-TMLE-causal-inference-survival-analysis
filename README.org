@@ -605,6 +605,56 @@ ggplot(pdat.melt) +
 #+END_SRC    
 
 
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+sl.models <- c("rx", "sex", "nodes", "age", "obstruct", "perfor",
+               "differ", "adhere", "extent", "surg", "nodes.squared",
+               "rx*age", "rx*sex", "rx*perfor")
+sl.models.grid <- expand.grid(lapply(1:length(sl.models), function(x) 0:1))
+names(sl.models.grid) <- sl.models
+
+sl.models.grid <- sl.models.grid[(1:nrow(sl.models.grid))[rowSums(sl.models.grid)>10 | (1:nrow(sl.models.grid))==2],]
+
+sl.models <- lapply(1:min(Inf,nrow(sl.models.grid)), function(ii) {
+    list(as.formula(paste0("Surv(time, event==1)~", paste0(na.omit(sapply(1:length(sl.models.grid), function(jj) {
+        ifelse(sl.models.grid[ii, jj]==1, names(sl.models.grid)[jj], NA)
+    })), collapse="+"))))})
+
+names(sl.models) <- paste0("cox.model.", 1:length(sl.models))
+fit.tmle.F1.Lev5FU.3yrs <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox.hal.sl",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox.hal.sl",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="sl",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE,
+            sl.models=sl.models, verbose.sl=TRUE,
+            hal.sl=TRUE,
+            output.tune.grid=TRUE,
+            cut.one.way.grid=ceiling(seq(5, 20, length=8)), 
+            cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
+            verbose.hal=TRUE, 
+            V=10,
+            target=1,
+            tau=3*365.25) 
+tune.grid <- copy(fit.tmle.F1.Lev5FU.3yrs)
+tune.grid[which=="cox", nodes:=unlist(lapply(sl.models, function(x) "nodes"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes:=0]
+tune.grid[which=="cox", nodes.squared:=unlist(lapply(sl.models, function(x) "nodes.squared"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", nodes.squared:=0]
+tune.grid[which=="cox", differ:=unlist(lapply(sl.models, function(x) "differ"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", differ:=0]
+tune.grid[which=="cox", extent:=unlist(lapply(sl.models, function(x) "extent"%in%gsub(" ", "", strsplit(strsplit(as.character(x), "~")[[1]][2], " \\+ ")[[1]])))]
+tune.grid[which!="cox", extent:=0]
+tune.grid[order(cve)]
+#+END_SRC   
+
+
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 *** Targeting hazard estimators for multivariate parameter
