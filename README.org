@@ -19,6 +19,12 @@ involved with this.
 
 ** Overview
 
+We consider as an example the analysis of a particular dataset as well
+as a simulated version resembling it. The point of looking at the
+simulated version is that we know the truth, both in terms of the
+underlying statistical model and the true values of the considered
+target parameters. We will go through the following: 
+
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#data-example][Presentation of the data example]]
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#simulated-version-of-the-colon-data][Simulated version of the data example]]
@@ -27,7 +33,7 @@ involved with this.
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-real-valued-parameter][Targeting hazard estimators for real-valued parameter]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-multivariate-parameter][Targeting hazard estimators for multivariate parameter]]
 
-- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#on-the-initial-estimation-for-analysis-of-the-colon-data][On the initial estimation for analysis of the colon data]]
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#initial-estimation-for-analysis-of-the-colon-data][On the initial estimation for analysis of the colon data]]
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
 
@@ -39,8 +45,8 @@ involved with this.
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point-1][Fixed time-point]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-multiple-time-points-1][Multiple time-points]]
 
-*Note:* To run any of the code below you need to load the following
-=R= script:
+*Note:* To run any of the code chunks below you need to load the
+following =R= script:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R  :results none :exports none  :session *R* :cache yes  
@@ -84,6 +90,18 @@ above:
 #+BEGIN_SRC R  :results none :exports code  :session *R* :cache yes  
 source("./usage/preprocess.colon.data.R")     
 #+END_SRC    
+
+Number of subjects assigned to each treatment (=rx=) option:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R  :results output :exports results  :session *R* :cache yes  
+colon.surv[, table(rx)] 
+#+END_SRC 
+
+#+RESULTS[<2021-11-25 08:10:30> eceb605fa0f7ede0e55b30ee62fd62ea8391b19b]:
+: rx
+:     Obs     Lev Lev+5FU 
+:     305     294     289
 
 Number of events in the survival data (=colon.surv=): 
 
@@ -200,8 +218,20 @@ set.seed(15)
 888:   1  51        1      0      0     4      2      3    1      2     Lev 2932.9771     1
 #+end_example
 
-To create a simulated version of the competing risks data, we run code
-as follows:
+The hazards are generated from Weibull distributions with functional
+form as specified by the =formula.1= (for the hazard of the event
+distribution) and =formula.0= arguments (for the hazard of the
+censoring distribution); note that for both we simply include main
+effects of treatment and all covariates. The treatment variable
+(called =rx=) is generated from the model including, as well, all main
+effects of covariates. The parameters for each model are estimated
+based on the observed colon data with the function =fit.colon.fun= and
+then used to generate the simulated data with
+=synthesize.colon.fun=. \\
+
+
+To create a simulated version of the competing risks data, we
+similarly run code as follows:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
@@ -231,6 +261,13 @@ set.seed(31)
 887:   1  50        1      0      1     1      2      3    0             1      2     Lev  127.1821     1
 888:   1  42        1      0      0     5      2      3    0            25      1     Obs  525.6158     1
 #+end_example
+
+Here the cause-specific hazards are generated from Weibull
+distributions with functional form as specified by the =formula.1= and
+=formula.2= arguments. As before, =formula.0= specifies the hazard of
+the censoring distribution.  Note that we specified the model for the
+cause-1 specific hazard with a squared effect of =nodes= and
+interactions between treatment and three of the covariates.
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -342,15 +379,16 @@ print(xtable(tab2, align=rep("c", length(true.a2)+1), digits=3))
 
 *** Targeting hazard estimators for real-valued parameter
 
-We here show the code to apply our TMLE function to target the
-real-valued parameter being the absolute risk of cancer relapse after
-3 years of follow-up under treatment with levamisole plus
-fluorouracil. \\
+We here show the code to apply our TMLE function to *the simulated
+data* to target the real-valued parameter being the absolute risk of
+cancer relapse after 3 years of follow-up under treatment with
+levamisole plus fluorouracil. \\
 
 Note that we simply use a Cox regression including main effects of all
 covariates for initial estimation of each cause-specific hazards and
 also for the hazard of censoring (specified in the =estimation=
-argument, with list elements for each hazard). To estimate the
+argument, with list elements for each hazard). This means that the Cox
+model is misspecified for the cause-1 specific hazard. To estimate the
 probability distribution of treatment (specified in the argument
 =treat.model=), we similarly include main effects of all
 covariates. To get the treatment-specific absolute risk of cancer
@@ -413,6 +451,24 @@ tmle.se  0.02584953
 (Note that the function call produces a warning from fitting the Cox
 model for the hazard of the censoring distribution because of the
 variable =extent=). \\
+
+Recall that the true value of this target parameter is:
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+true.a2[(1:10)/2==3][[1]]["F1"]
+#+END_SRC   
+
+#+RESULTS[<2021-11-25 08:18:01> ba1dc36541a4958b614f42ddad8b02e873381d17]:
+:       F1 
+: 0.271716
+
+Notice that how the initial and the updated TMLE estimates each differ
+from the true value; the initial estimator is biased due to the
+misspecification of the cause-1 specific hazard, but this bias is
+removed for the TMLE estimator due to its double robustness
+properties.
+
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
@@ -561,26 +617,28 @@ target the two absolute risk probabilities separately).
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
 fit.tmle.F1.F2.Lev5FU.3yrs <- 
-     contmle(sim.colon.cr,  
-             estimation=list("relapse"=list(fit="cox",
-                                            model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                             "death"=list(fit="cox",
-                                          model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
-                             "cens"=list(fit="cox",
-                                         model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
-                             ),
-             treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
-             treat.effect="Lev+5FU",   
-             output.km=TRUE, 
-             target=1:2, 
-             tau=3*365.25) 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE, 
+            target=1:2, 
+            simultaneous.ci=TRUE,
+            tau=3*365.25) 
 #+END_SRC   
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
-fit.tmle.F1.F2.Lev5FU.3yrs
+fit.tmle.F1.F2.Lev5FU.3yrs 
 #+END_SRC   
 
+#+RESULTS[<2021-11-25 08:24:40> e1369b712d18c66fb225564fad682e20a8e6fe99]:
 #+begin_example
 $init
 $init$F1
@@ -630,6 +688,103 @@ tmle.se   0.02660447
 
 $convergenced.at.step
 [1] 10
+
+$q.max.95
+     95% 
+1.963704
+#+end_example
+
+The number found by =q.max.95= in the output is the 95% quantile used
+to compute simultaneous confidence intervals. (Notice, however, that
+here this number is very close to 1.96, so there will not be much
+difference between the simultaneous and the marginal confidence
+intervals). \\
+
+There are different options to how to run the one-step TMLE,
+corresponding to different versions of weighted norms. Above we used
+the unweighted norm (which is default), but if we instead specify the
+argument =weighted.norm= as =Sigma=, we use the covariance weighted
+norm which often leads to much faster convergence: 
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
+fit.tmle.F1.F2.Lev5FU.3yrs <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE, 
+            target=1:2, 
+            simultaneous.ci=TRUE,
+            weighted.norm="Sigma", 
+            tau=3*365.25) 
+#+END_SRC   
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
+fit.tmle.F1.F2.Lev5FU.3yrs  
+#+END_SRC   
+
+#+RESULTS[<2021-11-25 08:28:34> 7088f5443fe37114e8cce0086c39e74571f08762]:
+#+begin_example
+$init
+$init$F1
+         tau=1095.75
+init.est  0.30605538
+init.se   0.02594074
+
+$init$F2
+         tau=1095.75
+init.est 0.012503259
+init.se  0.007945622
+
+$init$S
+         tau=1095.75
+init.est  0.68144137
+init.se   0.02669174
+
+
+$km
+$km$F1
+       tau=1095.75
+km.est  0.29184130
+km.se   0.02732888
+
+$km$F2
+       tau=1095.75
+km.est 0.014511430
+km.se  0.007204259
+
+
+$tmle
+$tmle$F1
+         tau=1095.75
+tmle.est  0.27905720
+tmle.se   0.02584936
+
+$tmle$F2
+         tau=1095.75
+tmle.est  0.01516394
+tmle.se   0.00791143
+
+$tmle$S
+         tau=1095.75
+tmle.est  0.70577886
+tmle.se   0.02660989
+
+
+$convergenced.at.step
+[1] 5
+
+$q.max.95
+     95% 
+1.963361
 #+end_example
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -946,7 +1101,7 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
 
 
 
-** On the initial estimation for analysis of the =colon= data
+** Initial estimation for analysis of the =colon= data
 
 We consider a large number of different Cox models by including and
 excluding different combinations of both main effects of covariates
@@ -1568,10 +1723,10 @@ $Obs$q.max.95
 Above we used the one-step TMLE to ensure compatible estimation. Here
 we instead use the iterative TMLE which targets the survival
 probabilities for each time-point separately. We also output the
-estimating equations estimates which, like the iterative TMLE,
-produces estimates solving each efficient influence curve equation
-separately, thus not guaranteed to yield compatible estimation of the
-full survival curve.
+estimating equations estimates which, like the iterative TMLE
+estimates, solve each efficient influence curve equation
+separately. Again, this is thus not guaranteed to yield compatible
+estimation of the full survival curve: 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results none  :session *R* :cache yes 
@@ -1600,7 +1755,7 @@ We can check monotonicity of the curve estimated with the iterative
 TMLE as follows. The rows in the output below are the time-points
 where the survival curve was increasing from one time-point to the
 next. (The amount that it is increasing is not large for these data,
-but this should illustrate the issue).
+but this should still illustrate the issue).
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
@@ -1659,7 +1814,7 @@ check.monotone[diff<0]
 #+end_example
 
 If we check the one-step TMLE, we just see that it is --- as expected
---- monotone.
+--- monotone:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
@@ -2702,6 +2857,7 @@ fit.contmle.F1.10 <- lapply(list("Lev", "Lev+5FU", "Obs"), function(treat) {
             cut.two.way.grid=ceiling(seq(0, 15, length=4)), 
             verbose.hal=TRUE,
             simultaneous.ci=TRUE,
+            weighted.norm="Sigma", 
             output.km=TRUE, 
             target=1, 
             tau=(1:10)/2*365.25)}) 
