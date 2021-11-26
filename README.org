@@ -430,6 +430,24 @@ fit.tmle.F1.Lev5FU.3yrs <-
 #+END_SRC   
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
+#+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
+fit.tmle.F1.Lev5FU.3yrs.correct <- 
+    contmle(sim.colon.cr,  
+            estimation=list("relapse"=list(fit="cox",
+                                           model=Surv(time, event==1)~rx+sex+differ+age+nodes.squared+obstruct+perfor+adhere+extent+surg+rx*sex+rx*perfor+rx*age),
+                            "death"=list(fit="cox",
+                                         model=Surv(time, event==2)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg),
+                            "cens"=list(fit="cox",
+                                        model=Surv(time, event==0)~rx+sex+nodes+age+obstruct+perfor+differ+adhere+extent+surg)
+                            ),
+            treat.model=rx~sex+age+nodes+obstruct+perfor+differ+adhere+extent+surg,
+            treat.effect="Lev+5FU",   
+            output.km=TRUE,
+            target=1,
+            tau=3*365.25) 
+#+END_SRC   
+
+#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
 fit.tmle.F1.Lev5FU.3yrs
 #+END_SRC   
@@ -458,24 +476,7 @@ tmle.se  0.02584953
 
 (Note that the function call produces a warning from fitting the Cox
 model for the hazard of the censoring distribution because of the
-variable =extent=). \\
-
-Recall that the true value of this target parameter is:
-
-#+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
-#+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
-true.a2[(1:10)/2==3][[1]]["F1"]
-#+END_SRC   
-
-:       F1 
-: 0.271716
-
-Notice how the initial and the updated TMLE estimates each differ from
-the true value; the initial estimator is biased due to the
-misspecification of the cause-1 specific hazard, but this bias is
-removed for the TMLE estimator due to its double robustness
-properties.
-
+variable =extent=). 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports none :results none  :session *R* :cache yes 
