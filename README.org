@@ -29,23 +29,21 @@ We will go through the following:
 
 - [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#data-example][Presentation of the data example]]
 
-- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#simulated-version-of-the-colon-data][Simulated version of the data example]]
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#simulated-version-of-the-colon-data][Simulated version of the data]]
 
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#true-values-of-target-parameters-box-1][Computing true values of target parameters]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-real-valued-parameter][Targeting hazard estimators for real-valued parameter]]
  + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#targeting-hazard-estimators-for-multivariate-parameter][Targeting hazard estimators for multivariate parameter]]
 
-- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#initial-estimation-for-analysis-of-the-colon-data][On the initial estimation for analysis of the colon data]]
+- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-data][Analysis of the colon data]]
 
-- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
-
- + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point][Fixed time-point]]
- + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-multiple-time-points][Multiple time-points]]
-
-- [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-competing-risks-data][Analysis of the colon competing risks data]]
-
- + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point-1][Fixed time-point]]
- + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-multiple-time-points-1][Multiple time-points]]
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#initial-estimation-for-analysis-of-the-colon-data][On the initial estimation for analysis of the colon data]]
+ + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-survival-data][Analysis of the colon survival data]]
+   + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point][Fixed time-point]]
+   + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-multiple-time-points][Multiple time-points]]
+ +  [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#analysis-of-the-colon-competing-risks-data][Analysis of the colon competing risks data]]
+   + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-fixed-time-point-1][Fixed time-point]]
+   + [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis#target-parameters-evaluated-at-multiple-time-points-1][Multiple time-points]]
 
 *Note:* To run any of the code chunks below you need to load the
 following =R= script:
@@ -3306,7 +3304,6 @@ pp <- c("data.table", "zoo", "glmnet", "stringr", "nleqslv", "prodlim", "ggplot2
 Publish::org(data.table(Package=pp,Version=sapply(pp,function(x) as.character(packageVersion(x))))) 
 #+END_SRC
 
-#+RESULTS[<2021-10-26 13:12:32> 5277b86706f38c0f421795154abdeb26ccff69db]:
 :RESULTS:
 | Package        |    Version |
 |----------------+------------|
