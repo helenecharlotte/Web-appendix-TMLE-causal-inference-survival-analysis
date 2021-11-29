@@ -1,7 +1,7 @@
 # Web-appendix-TMLE-causal-inference-survival-analysis
 * Web appendix 
 
-This is the web-appendix to our manuscript entitled /Targeted/
+This is the web appendix to our manuscript entitled /Targeted/
 /maximum likelihood estimation for causal inference in survival and
 competing risks analysis/. \\
 
@@ -177,7 +177,6 @@ missing covariates.\\
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 
-
 ** Simulated version of the =colon= data
 
 The following script sets up simple functionality to create simulated
@@ -188,8 +187,8 @@ versions of the =colon= data:
 source("./usage/synthesize.colon.data.R")       
 #+END_SRC    
 
-To create a simulated version of the survival data, we run code as
-follows:
+To create a simulated version of the survival data, we can for example
+run code as follows:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports both :results output  :session *R* :cache yes 
@@ -220,15 +219,14 @@ set.seed(15)
 #+end_example
 
 The hazards are generated from Weibull distributions with functional
-form as specified by the =formula.1= (for the hazard of the event
-distribution) and =formula.0= (for the hazard of the censoring
-distribution) arguments; note that for both we simply include main
-effects of treatment and all covariates. The treatment variable
-(called =rx=) is generated from the model including, as well, all main
-effects of covariates. The parameters for each model are estimated
-based on the observed colon data with the function =fit.colon.fun= and
-then used to generate the simulated data with
-=synthesize.colon.fun=. \\
+form as specified by the arguments =formula.1= (for the hazard of the
+event distribution) and =formula.0= (for the hazard of the censoring
+distribution); note that for both we simply include main effects of
+treatment and all covariates. The treatment variable (called =rx=) is
+generated from the model including, as well, all main effects of
+covariates. The parameters for each model are estimated based on the
+observed colon data with the function =fit.colon.fun= and then used to
+generate the simulated data with =synthesize.colon.fun=. \\
 
 
 To create a simulated version of the competing risks data, we
@@ -268,7 +266,8 @@ distributions with functional forms as specified by the =formula.1=
 and =formula.2= arguments. As before, =formula.0= specifies the hazard
 of the censoring distribution.  Note that we specified the model for
 the cause-1 specific hazard with a squared effect of =nodes= and
-interactions between treatment and three of the covariates.
+interactions between treatment (=rx=) and three of the covariates
+(=sex=, =perfor= and =age=).
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
@@ -395,7 +394,7 @@ plus fluorouracil. \\
 Note that we simply use a Cox regression including main effects of all
 covariates for initial estimation of each cause-specific hazards and
 also for the hazard of censoring (specified in the =estimation=
-argument, with list elements for each hazard). Thus, the Cox model is
+argument, with list elements for each hazard). The Cox model is
 misspecified for the cause-1 specific hazard. To estimate the
 probability distribution of treatment (specified in the argument
 =treat.model=), we similarly include main effects of all
@@ -1160,20 +1159,19 @@ ggplot(pdat.melt[treat==2 & parameter=="Psi[1]^a"]) +
 
 
 
+** Analysis of the =colon= data
 
-
-** Initial estimation for analysis of the =colon= data
+*** Initial estimation for analysis of the =colon= data
 
 Now we consider the actual colon data (and not the simulated
 version). For initial estimation of cause-specific hazards in all the
 following analyses, we use will a super learner consisting of the Cox
-models specified above as well as a selection of different HAL
+models specified below as well as a selection of different HAL
 estimators.\\
 
-Here we specify a large number of different Cox models by including
-and excluding different combinations of both main effects of
-covariates and also a selection of interactions between treatment and
-covariates:
+We specify a large number of different Cox models by including and
+excluding different combinations of both main effects of covariates
+and also a selection of interactions between treatment and covariates:
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
 #+BEGIN_SRC R :exports code :results output :session *R* :cache yes
@@ -1246,7 +1244,7 @@ first order and second order basis functions.
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
 
-** Analysis of the =colon= survival data
+*** Analysis of the =colon= survival data
 
 
 
@@ -1400,7 +1398,7 @@ ggplot(tune.grid) +
 
 
 
-*** Target parameters evaluated at fixed time-point 
+**** Target parameters evaluated at fixed time-point 
 
 We here compute TMLE estimates of the survival probabilities evaluated
 after 3 years of follow-up, using for initial estimation of the event
@@ -1568,7 +1566,7 @@ ggplot(pdat) +
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
-*** Target parameters evaluated at multiple time-points 
+**** Target parameters evaluated at multiple time-points 
 
 We here compute TMLE estimates of the survival probabilities evaluated
 at a grid of 50 equidistant follow-up time-points, using again for
@@ -2103,7 +2101,7 @@ ggplot(pdat) + #[which=="Lev+5FU"]) +
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
-** Analysis of the =colon= competing risks data
+*** Analysis of the =colon= competing risks data
 
 
 #+ATTR_LATEX: :options otherkeywords={}, deletekeywords={}
@@ -2635,7 +2633,7 @@ ggplot(tune.grid) +
 #+END_SRC    
 
 
-*** Target parameters evaluated at fixed time-point
+**** Target parameters evaluated at fixed time-point
 
 We here compute TMLE estimates of all state occupation probabilities
 evaluated after 3 years of follow-up, using for initial estimation of
@@ -2976,7 +2974,7 @@ ggplot(pdat) +
 
 [[https://github.com/helenecharlotte/Web-appendix-TMLE-causal-inference-survival-analysis][Back to top]]
 
-*** Target parameters evaluated at multiple time-points 
+**** Target parameters evaluated at multiple time-points 
 
 
 We here compute TMLE estimates of the absolute risk of cancer relapse
